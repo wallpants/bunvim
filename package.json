@@ -1,0 +1,16 @@
+{
+  "name": "bunvim",
+  "version": "0.0.1",
+  "author": "Gual Casas",
+  "repository": "https://github.com/gualcasas/bunvim",
+  "exports": {
+    "types": "./src/index.ts",
+    "bun": "./src/index.ts"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

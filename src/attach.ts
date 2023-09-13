@@ -8,7 +8,7 @@ enum MessageType {
     NOTIFY = 2,
 }
 
-type NotificationHandler = (event: string, ...args: unknown[]) => void | Promise<void>;
+type NotificationHandler = (event: string, args: unknown[]) => void | Promise<void>;
 
 type RPCMessage =
     | [MessageType.REQUEST, id: number, method: string, args: unknown[]]
@@ -37,7 +37,7 @@ export async function attach<
             async data(socket, data) {
                 const message = unpack(data) as RPCMessage;
                 if (message[0] === MessageType.NOTIFY) {
-                    await notificationHandler?.(message[1], ...message[2]);
+                    await notificationHandler?.(message[1], message[2]);
                 }
 
                 if (message[0] === MessageType.RESPONSE) {

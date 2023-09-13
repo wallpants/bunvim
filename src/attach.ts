@@ -8,12 +8,12 @@ enum MessageType {
     NOTIFY = 2,
 }
 
-type NotificationHandler = (event: string, args: unknown) => void | Promise<void>;
+type NotificationHandler = (event: string, ...args: unknown[]) => void | Promise<void>;
 
 type RPCMessage =
     | [MessageType.REQUEST, id: number, method: string, args: unknown[]]
     | [MessageType.RESPONSE, id: number, error: Error | null, response: unknown]
-    | [MessageType.NOTIFY, eventName: string, args: unknown];
+    | [MessageType.NOTIFY, eventName: string, args: unknown[]];
 
 export async function attach<
     ApiInfo extends Record<string, { parameters: unknown[]; returns: unknown }>,
@@ -35,14 +35,13 @@ export async function attach<
         unix: socket,
         socket: {
             async data(socket, data) {
-                const [type, id, ...args] = unpack(data) as RPCMessage;
-                if (type === MessageType.NOTIFY) {
-                    await notificationHandler?.(id, args);
+                const message = unpack(data) as RPCMessage;
+                if (message[0] === MessageType.NOTIFY) {
+                    await notificationHandler?.(message[1], ...message[2]);
                 }
 
-                if (type === MessageType.RESPONSE) {
-                    const [error, response] = args;
-                    emitter.emit(`response-${id}`, error, response);
+                if (message[0] === MessageType.RESPONSE) {
+                    emitter.emit(`response-${message[1]}`, message[2], message[3]);
                     awaitingResponse = false;
                 }
 

@@ -1,3 +1,2 @@
-export function attach(socket: string) {
-  console.log("attaching to socket: ", socket);
-}
+export { attach } from "./attach";
+export * from "./generated-api-info.ts";

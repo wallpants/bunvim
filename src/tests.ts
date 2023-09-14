@@ -1,18 +1,29 @@
 import { attach } from "./index.ts";
+import { logger } from "./logger.ts";
 
-const SOCKET = "/run/user/1000/nvim.86978.0";
-const nvim = await attach({ socket: SOCKET });
+logger.verbose("starting");
+const SOCKET = process.env.NVIM;
+if (!SOCKET) throw Error("socket missing");
 
-await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
+const nvim = await attach<{ "test-notif": [] }>({ socket: SOCKET });
+logger.verbose("attached");
 
-// both these handlers would run
-// on a `my_rpc_notification` notification
-nvim.onNotification("*", (args) => {
-    console.log(args);
+const fileName = await nvim.call("nvim_buf_get_name", [0]);
+logger.verbose({ fileName });
+
+await nvim.call("nvim_subscribe", ["test-notif"]);
+logger.verbose("subscribed");
+
+let counter = 0;
+
+nvim.onNotification("*", async () => {
+    logger.verbose("*");
+    await nvim.call("nvim_buf_set_lines", [0, 0, 1, true, [`-- *: ${String(counter++)}`]]);
 });
 
-nvim.onNotification("my_rpc_notification", (args) => {
-    console.log(args);
+nvim.onNotification("test-notif", async () => {
+    logger.verbose("test-notif");
+    await nvim.call("nvim_buf_set_lines", [0, 1, 2, true, [`-- test-notif: ${String(counter++)}`]]);
 });
 
-nvim.detach();
+logger.verbose("registered listeners");

@@ -2,6 +2,7 @@ import { type Socket } from "bun";
 import { pack, unpack } from "msgpackr";
 import { EventEmitter } from "node:events";
 import { type ApiInfo } from "./generated-api-info.ts";
+import { logger } from "./logger.ts";
 
 enum MessageType {
     REQUEST = 0,
@@ -17,8 +18,11 @@ type RPCMessage =
 export async function attach<
     EventsMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 >({ socket }: { socket: string }) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const notificationHandlers = new Map<string, (args: any) => void | Promise<void>>();
+    const notificationHandlers = new Map<
+        string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (args: any, event: string) => void | Promise<void>
+    >();
     const emitter = new EventEmitter({ captureRejections: true });
     const messageOutQueue: RPCMessage[] = [];
 
@@ -28,7 +32,9 @@ export async function attach<
     function processRequestQueue(socket: Socket) {
         if (!messageOutQueue.length || awaitingResponse) return;
         awaitingResponse = true;
-        socket.write(pack(messageOutQueue.shift()));
+        const request = messageOutQueue.shift();
+        logger.verbose("request out", { request });
+        socket.write(pack(request));
     }
 
     const nvimSocket = await Bun.connect({
@@ -36,12 +42,13 @@ export async function attach<
         socket: {
             data(socket, data) {
                 const message = unpack(data) as RPCMessage;
+                logger.verbose("message in", { data: { message } });
                 if (message[0] === MessageType.NOTIFY) {
                     const catchAllHander = notificationHandlers.get("*");
-                    void catchAllHander?.(message[2]);
+                    void catchAllHander?.(message[2], message[1]);
 
                     const notificationHandler = notificationHandlers.get(message[1]);
-                    void notificationHandler?.(message[2]);
+                    void notificationHandler?.(message[2], message[1]);
                 }
 
                 if (message[0] === MessageType.RESPONSE) {
@@ -52,6 +59,9 @@ export async function attach<
                 if (messageOutQueue.length) {
                     processRequestQueue(socket);
                 }
+            },
+            end() {
+                logger.verbose("neovim closed connection");
             },
         },
     });
@@ -93,6 +103,9 @@ export async function attach<
         /**
          * Register a handler for rpc notifications
          *
+         * @param func - event name
+         * @param callback - notification handler
+         *
          * Use `"*"` to register a catch-all notification handler.
          *
          * @example
@@ -103,8 +116,9 @@ export async function attach<
          * // both "*" and "my_rpc_notification" "handlers
          * // would run on a "my_rpc_notification" notification from neovim
          *
-         * nvim.onNotification("*", (args) => {
+         * nvim.onNotification("*", (args, event) => {
          *   // catch-all is always called first
+         *   console.log(event);
          *   console.log(args);
          * });
          *
@@ -115,7 +129,10 @@ export async function attach<
          */
         onNotification<T extends "*" | keyof EventsMap>(
             event: T,
-            callback: (args: T extends "*" ? unknown[] : EventsMap[T]) => void | Promise<void>,
+            callback: (
+                args: T extends "*" ? unknown[] : EventsMap[T],
+                event: string,
+            ) => void | Promise<void>,
         ) {
             notificationHandlers.set(event as string, callback);
         },

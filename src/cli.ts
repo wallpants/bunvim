@@ -1,6 +1,6 @@
-import apiInfo from "./api-info.json";
+// import apiInfo from "./api-info.json";
 
-function toTypescriptType(type: string | undefined) {
+export function toTypescriptType(type: string | undefined) {
     const typesMap: Record<string, string> = {
         Array: "unknown[]",
         "ArrayOf(Buffer)": "number[]",
@@ -35,21 +35,21 @@ let output = `/* eslint @typescript-eslint/no-invalid-void-type: 0 */
 
 export type NeovimApiInfo = {\n`;
 
-apiInfo.functions
-    .filter((fn) => fn.deprecated_since === undefined)
-    .forEach((fun) => {
-        output += `    ${fun.name}: {
-        parameters: [${
-            fun.parameters.length
-                ? `${fun.parameters
-                      .map((param) => `${param[1]}: ${toTypescriptType(param[0])}`)
-                      .join(", ")}`
-                : ""
-        }];
-        returns: ${toTypescriptType(fun.return_type)};
-    };
-`;
-    });
+// apiInfo.functions
+//     .filter((fn) => fn.deprecated_since === undefined)
+//     .forEach((fun) => {
+//         output += `    ${fun.name}: {
+//         parameters: [${
+//             fun.parameters.length
+//                 ? `${fun.parameters
+//                       .map((param) => `${param[1]}: ${toTypescriptType(param[0])}`)
+//                       .join(", ")}`
+//                 : ""
+//         }];
+//         returns: ${toTypescriptType(fun.return_type)};
+//     };
+// `;
+//     });
 
 output += "\n}";
 

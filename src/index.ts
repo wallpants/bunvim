@@ -1,7 +1,7 @@
 import { type Socket } from "bun";
 import { pack, unpack } from "msgpackr";
 import { EventEmitter } from "node:events";
-import { type NeovimApiInfo } from "./generated-api-info.ts";
+import { type ApiInfo } from "./generated-api-info.ts";
 
 enum MessageType {
     REQUEST = 0,
@@ -16,7 +16,6 @@ type RPCMessage =
 
 export async function attach<
     EventsMap extends Record<string, unknown[]> = Record<string, unknown[]>,
-    ApiInfo extends Record<string, { parameters: unknown[]; returns: unknown }> = NeovimApiInfo,
 >({ socket }: { socket: string }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const notificationHandlers = new Map<string, (args: any) => void | Promise<void>>();
@@ -73,7 +72,7 @@ export async function attach<
         });
     }
 
-    /** "*" is the catch-all notification handler */
+    /** "\*" is the catch-all notification handler */
     function onNotification<T extends "*" | keyof EventsMap>(
         event: T,
         callback: (args: T extends "*" ? unknown[] : EventsMap[T]) => void | Promise<void>,

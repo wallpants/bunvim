@@ -22,8 +22,8 @@ export async function attach<
     const emitter = new EventEmitter({ captureRejections: true });
     const messageOutQueue: RPCMessage[] = [];
 
-    let awaitingResponse = false;
     let lastReqId = 0;
+    let awaitingResponse = false;
 
     function processRequestQueue(socket: Socket) {
         if (!messageOutQueue.length || awaitingResponse) return;
@@ -34,14 +34,14 @@ export async function attach<
     const nvimSocket = await Bun.connect({
         unix: socket,
         socket: {
-            async data(socket, data) {
+            data(socket, data) {
                 const message = unpack(data) as RPCMessage;
                 if (message[0] === MessageType.NOTIFY) {
                     const catchAllHander = notificationHandlers.get("*");
-                    await catchAllHander?.(message[2]);
+                    void catchAllHander?.(message[2]);
 
                     const notificationHandler = notificationHandlers.get(message[1]);
-                    await notificationHandler?.(message[2]);
+                    void notificationHandler?.(message[2]);
                 }
 
                 if (message[0] === MessageType.RESPONSE) {
@@ -56,30 +56,75 @@ export async function attach<
         },
     });
 
-    function call<M extends keyof ApiInfo>(
-        method: M,
-        args: ApiInfo[M]["parameters"],
-    ): Promise<ApiInfo[M]["returns"]> {
-        const reqId = ++lastReqId;
-        const request: RPCMessage = [MessageType.REQUEST, reqId, method as string, args];
-        return new Promise((resolve, reject) => {
-            emitter.once(`response-${reqId}`, (error, response) => {
-                if (error) reject(error);
-                resolve(response as ApiInfo[M]["returns"]);
+    return {
+        /**
+         * Call a neovim function
+         * @see {@link https://neovim.io/doc/user/api.html}
+         *
+         * @param func - function name
+         * @param params - function params
+         *
+         * @example
+         * ```ts
+         * const lineCount = await nvim.call("nvim_buf_line_count", [0]);
+         * console.log(lineCount)
+         *
+         * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
+         * ```
+         */
+        call<M extends keyof ApiInfo>(
+            func: M,
+            params: ApiInfo[M]["parameters"],
+        ): Promise<ApiInfo[M]["returns"]> {
+            const reqId = ++lastReqId;
+            const request: RPCMessage = [MessageType.REQUEST, reqId, func as string, params];
+
+            return new Promise((resolve, reject) => {
+                emitter.once(`response-${reqId}`, (error, response) => {
+                    if (error) reject(error);
+                    resolve(response as ApiInfo[M]["returns"]);
+                });
+
+                messageOutQueue.push(request);
+                processRequestQueue(nvimSocket);
             });
-            messageOutQueue.push(request);
-            processRequestQueue(nvimSocket);
-        });
-    }
+        },
 
-    /** "\*" is the catch-all notification handler */
-    function onNotification<T extends "*" | keyof EventsMap>(
-        event: T,
-        callback: (args: T extends "*" ? unknown[] : EventsMap[T]) => void | Promise<void>,
-    ) {
-        notificationHandlers.set(event as string, callback);
-    }
+        /**
+         * Register a handler for rpc notifications
+         *
+         * Use `"*"` to register a catch-all notification handler.
+         *
+         * @example
+         * ```ts
+         * // you only receive notifications for events you are subcribed to
+         * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
+         *
+         * // both "*" and "my_rpc_notification" "handlers
+         * // would run on a "my_rpc_notification" notification from neovim
+         *
+         * nvim.onNotification("*", (args) => {
+         *   // catch-all is always called first
+         *   console.log(args);
+         * });
+         *
+         * nvim.onNotification("my_rpc_notification", (args) => {
+         *   console.log(args);
+         * });
+         * ```
+         */
+        onNotification<T extends "*" | keyof EventsMap>(
+            event: T,
+            callback: (args: T extends "*" ? unknown[] : EventsMap[T]) => void | Promise<void>,
+        ) {
+            notificationHandlers.set(event as string, callback);
+        },
 
-    // TODO(gualcasas): implement onRequest similar to onNotification
-    return { call, onNotification };
+        /**
+         * Close socket connection to neovim
+         */
+        detach() {
+            nvimSocket.end();
+        },
+    };
 }

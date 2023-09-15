@@ -27,7 +27,7 @@ function createLogger(streamPath: string, logLevel: string) {
                 format: winston.format.combine(
                     winston.format.prettyPrint({
                         colorize: true,
-                        depth: 4,
+                        depth: 5,
                     }),
                 ),
             }),

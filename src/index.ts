@@ -1,5 +1,5 @@
 import { type Socket } from "bun";
-import { pack, unpack } from "msgpackr";
+import { Packr, Unpackr } from "msgpackr";
 import { EventEmitter } from "node:events";
 import { type ApiInfo } from "./generated-api-info.ts";
 import { createLogger } from "./logger.ts";
@@ -16,6 +16,9 @@ import {
 export * from "./types.ts";
 
 export const logger = createLogger(process.env.BUNVIM_LOG_FILE, process.env.BUNVIM_LOG_LEVEL);
+
+const packr = new Packr();
+const unpackr = new Unpackr({ useRecords: false });
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,
@@ -56,14 +59,15 @@ export async function attach<
             });
         }
 
-        socket.write(pack(request));
+        socket.write(packr.pack(request));
     }
 
     const nvimSocket = await Bun.connect({
         unix: socket,
         socket: {
+            binaryType: "uint8array",
             async data(socket, data) {
-                const message = unpack(data) as RPCMessage;
+                const message = unpackr.unpack(data) as RPCMessage;
                 if (message[0] === MessageType.NOTIFY) {
                     const [, notification, args] = message;
                     logger.verbose("INCOMING", { NOTIFICATION: message });
@@ -135,7 +139,7 @@ export async function attach<
          * @example
          * ```ts
          * const currLine = await nvim.call("nvim_get_current_line", []);
-         * console.log(currLine)
+         * console.log(currLine);
          *
          * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
          * ```

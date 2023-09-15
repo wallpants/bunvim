@@ -19,17 +19,15 @@ function createLogger(streamPath: string, logLevel: string) {
                 format: winston.format.combine(
                     winston.format.colorize(),
                     winston.format.timestamp({ format: "HH:mm:ss" }),
-                    winston.format.printf((info) => `${info.level} ${info.timestamp}`),
+                    winston.format.printf((info) => `\n${info.level} ${info.timestamp}`),
                 ),
             }),
             new winston.transports.Stream({
                 stream,
-                format: winston.format.combine(
-                    winston.format.prettyPrint({
-                        colorize: true,
-                        depth: 5,
-                    }),
-                ),
+                format: winston.format.prettyPrint({
+                    colorize: true,
+                    depth: 5,
+                }),
             }),
         ],
     });

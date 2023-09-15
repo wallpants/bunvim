@@ -32,8 +32,17 @@ export async function attach<
     function processRequestQueue(socket: Socket) {
         if (!messageOutQueue.length || awaitingResponse) return;
         awaitingResponse = true;
+
         const request = messageOutQueue.shift();
-        logger.verbose("request out", { request });
+        if (!request) return;
+
+        logger.verbose("OUTGOING", {
+            REQUEST: {
+                reqId: request[1],
+                method: request[2],
+                params: request[3],
+            },
+        });
         socket.write(pack(request));
     }
 
@@ -42,8 +51,8 @@ export async function attach<
         socket: {
             data(socket, data) {
                 const message = unpack(data) as RPCMessage;
-                logger.verbose("message in", { data: { message } });
                 if (message[0] === MessageType.NOTIFY) {
+                    logger.verbose("INCOMING", { NOTIFICATION: message });
                     const catchAllHander = notificationHandlers.get("*");
                     void catchAllHander?.(message[2], message[1]);
 
@@ -52,6 +61,13 @@ export async function attach<
                 }
 
                 if (message[0] === MessageType.RESPONSE) {
+                    logger.verbose("INCOMING", {
+                        RESPONSE: {
+                            reqId: message[1],
+                            error: message[2],
+                            response: message[3],
+                        },
+                    });
                     emitter.emit(`response-${message[1]}`, message[2], message[3]);
                     awaitingResponse = false;
                 }

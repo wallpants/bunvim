@@ -4,19 +4,23 @@ import { EventEmitter } from "node:events";
 import { type ApiInfo } from "./generated-api-info.ts";
 import { logger } from "./logger.ts";
 
-enum MessageType {
+export enum MessageType {
     REQUEST = 0,
     RESPONSE = 1,
     NOTIFY = 2,
 }
 
-type RPCMessage =
+export type RPCMessage =
     | [MessageType.REQUEST, id: number, method: string, args: unknown[]]
-    | [MessageType.RESPONSE, id: number, error: Error | null, response: unknown]
+    | [MessageType.RESPONSE, id: number, error: string | null, response: unknown]
     | [MessageType.NOTIFY, eventName: string, args: unknown[]];
 
-type NotificationHandler = (args: unknown[], event: string) => void | Promise<void>;
-type RequestHandler = (params: unknown[], method: string) => RPCMessage | Promise<RPCMessage>;
+export type NotificationHandler = (args: unknown[], event: string) => void | Promise<void>;
+export type RequestHandler = (
+    reqId: number,
+    params: unknown[],
+    method: string,
+) => RPCMessage | Promise<RPCMessage>;
 
 export async function attach<
     EventsMap extends Record<string, unknown[]> = Record<string, unknown[]>,
@@ -36,13 +40,26 @@ export async function attach<
         const request = messageOutQueue.shift();
         if (!request) return;
 
-        logger.verbose("OUTGOING", {
-            REQUEST: {
-                reqId: request[1],
-                method: request[2],
-                params: request[3],
-            },
-        });
+        if (request[0] === MessageType.REQUEST) {
+            logger.verbose("OUTGOING", {
+                REQUEST: {
+                    reqId: request[1],
+                    method: request[2],
+                    params: request[3],
+                },
+            });
+        }
+
+        if (request[0] === MessageType.RESPONSE) {
+            logger.verbose("OUTGOING", {
+                RESPONSE: {
+                    reqId: request[1],
+                    error: request[2],
+                    result: request[3],
+                },
+            });
+        }
+
         socket.write(pack(request));
     }
 
@@ -87,13 +104,13 @@ export async function attach<
                         const notFound: RPCMessage = [
                             MessageType.RESPONSE,
                             message[1],
-                            Error(`no handler for method ${message[2]} found`),
+                            `no handler for method ${message[2]} found`,
                             null,
                         ];
                         messageOutQueue.unshift(notFound);
                     } else {
                         // TODO(gualcasas): Add timeout guard
-                        const response = await handler(message[3], message[2]);
+                        const response = await handler(message[1], message[3], message[2]);
                         messageOutQueue.unshift(response);
                     }
                 }

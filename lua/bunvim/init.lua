@@ -38,7 +38,13 @@ M.setup = function()
 		-- })
 	end
 
+	local function rpc_request()
+		local response = vim.rpcrequest(client_channel("gualberto"), "func_gual", { 1, 2, 3, 4, 5, 6, 7 })
+		vim.print(response)
+	end
+
 	vim.api.nvim_create_user_command("GithubPreview", start_server, {})
+	vim.api.nvim_create_user_command("GithubPreviewRpcRequest", rpc_request, {})
 end
 
 return M

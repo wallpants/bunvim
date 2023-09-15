@@ -1,6 +1,8 @@
 import { attach } from "./index.ts";
-import { logger } from "./logger.ts";
+import { createLogger } from "./logger.ts";
 import { type RequestResponse } from "./types.ts";
+
+const logger = createLogger(process.env.BUNVIN_LOG_FILE, process.env.BUNVIN_LOG_LEVEL);
 
 logger.verbose("starting");
 const SOCKET = process.env.NVIM;
@@ -21,8 +23,8 @@ const listChans = (await nvim.call("nvim_list_chans", [])) as Channel[];
 const chan = listChans.find((chan) => chan.client?.name === "gualberto");
 if (!chan) throw Error("chan not found");
 
-nvim.onNotification("*", (args) => {});
-nvim.onNotification("gual", (args) => {});
+// nvim.onNotification("*", (args) => {});
+// nvim.onNotification("gual", (args) => {});
 
 await nvim.call("nvim_create_autocmd", [
     ["CursorHold", "TextChangedI"],

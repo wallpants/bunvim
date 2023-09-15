@@ -2,7 +2,7 @@ import { type Socket } from "bun";
 import { pack, unpack } from "msgpackr";
 import { EventEmitter } from "node:events";
 import { type ApiInfo } from "./generated-api-info.ts";
-import { logger } from "./logger.ts";
+import { createLogger } from "./logger.ts";
 import {
     MessageType,
     type NotificationHandler,
@@ -12,6 +12,9 @@ import {
     type RequestHandler,
     type RequestsMap,
 } from "./types.ts";
+export * from "./types.ts";
+
+const logger = createLogger(process.env.BUNVIN_LOG_FILE, process.env.BUNVIN_LOG_LEVEL);
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,

@@ -1,7 +1,7 @@
 import { createWriteStream } from "node:fs";
 import winston from "winston";
 
-function createLogger(streamPath: string, logLevel: string) {
+export function createLogger(streamPath?: string, logLevel = "verbose") {
     if (!streamPath) {
         return winston.createLogger({
             // we must provide at least one logger or winston cries
@@ -32,5 +32,3 @@ function createLogger(streamPath: string, logLevel: string) {
         ],
     });
 }
-
-export const logger = createLogger("/tmp/bunvim", "verbose");

@@ -2,7 +2,7 @@ import { attach } from "./index.ts";
 import { createLogger } from "./logger.ts";
 import { type RequestResponse } from "./types.ts";
 
-const logger = createLogger(process.env.BUNVIN_LOG_FILE, process.env.BUNVIN_LOG_LEVEL);
+const logger = createLogger(process.env.BUNVIM_LOG_FILE, process.env.BUNVIM_LOG_LEVEL);
 
 logger.verbose("starting");
 const SOCKET = process.env.NVIM;

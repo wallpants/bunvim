@@ -14,7 +14,7 @@ import {
 } from "./types.ts";
 export * from "./types.ts";
 
-const logger = createLogger(process.env.BUNVIN_LOG_FILE, process.env.BUNVIN_LOG_LEVEL);
+const logger = createLogger(process.env.BUNVIM_LOG_FILE, process.env.BUNVIM_LOG_LEVEL);
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,

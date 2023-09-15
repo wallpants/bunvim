@@ -8,13 +8,14 @@ import {
     type NotificationHandler,
     type NotificationsMap,
     type RPCMessage,
+    type RPCRequest,
     type RPCResponse,
     type RequestHandler,
     type RequestsMap,
 } from "./types.ts";
 export * from "./types.ts";
 
-const logger = createLogger(process.env.BUNVIM_LOG_FILE, process.env.BUNVIM_LOG_LEVEL);
+export const logger = createLogger(process.env.BUNVIM_LOG_FILE, process.env.BUNVIM_LOG_LEVEL);
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,
@@ -111,6 +112,12 @@ export async function attach<
                     processRequestQueue(socket);
                 }
             },
+            timeout(_socket) {
+                logger.error("nvimSocket TIMEOUT");
+            },
+            error(_socket, error) {
+                logger.error("nvimSocket ERROR", error);
+            },
             end() {
                 logger.verbose("neovim closed connection");
             },
@@ -138,7 +145,7 @@ export async function attach<
             args: ApiInfo[M]["parameters"],
         ): Promise<ApiInfo[M]["returns"]> {
             const reqId = ++lastReqId;
-            const request: RPCMessage = [MessageType.REQUEST, reqId, func as string, args];
+            const request: RPCRequest = [MessageType.REQUEST, reqId, func as string, args];
 
             return new Promise((resolve, reject) => {
                 emitter.once(`response-${reqId}`, (error, result) => {

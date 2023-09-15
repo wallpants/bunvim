@@ -110,7 +110,6 @@ export async function attach<
          *
          * @example
          * ```ts
-         * // you only receive notifications for events you are subcribed to
          * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
          *
          * // both "*" and "my_rpc_notification" "handlers

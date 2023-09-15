@@ -15,14 +15,14 @@ type RPCMessage =
     | [MessageType.RESPONSE, id: number, error: Error | null, response: unknown]
     | [MessageType.NOTIFY, eventName: string, args: unknown[]];
 
+type NotificationHandler = (args: unknown[], event: string) => void | Promise<void>;
+type RequestHandler = (params: unknown[], method: string) => RPCMessage | Promise<RPCMessage>;
+
 export async function attach<
     EventsMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 >({ socket }: { socket: string }) {
-    const notificationHandlers = new Map<
-        string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (args: any, event: string) => void | Promise<void>
-    >();
+    const requestHandlers = new Map<string, RequestHandler>();
+    const notificationHandlers = new Map<string, NotificationHandler>();
     const emitter = new EventEmitter({ captureRejections: true });
     const messageOutQueue: RPCMessage[] = [];
 
@@ -49,7 +49,7 @@ export async function attach<
     const nvimSocket = await Bun.connect({
         unix: socket,
         socket: {
-            data(socket, data) {
+            async data(socket, data) {
                 const message = unpack(data) as RPCMessage;
                 if (message[0] === MessageType.NOTIFY) {
                     logger.verbose("INCOMING", { NOTIFICATION: message });
@@ -70,6 +70,32 @@ export async function attach<
                     });
                     emitter.emit(`response-${message[1]}`, message[2], message[3]);
                     awaitingResponse = false;
+                }
+
+                if (message[0] === MessageType.REQUEST) {
+                    logger.verbose("INCOMING", {
+                        REQUEST: {
+                            reqId: message[1],
+                            method: message[2],
+                            args: message[3],
+                        },
+                    });
+
+                    const handler = requestHandlers.get(message[2]);
+
+                    if (!handler) {
+                        const notFound: RPCMessage = [
+                            MessageType.RESPONSE,
+                            message[1],
+                            Error(`no handler for method ${message[2]} found`),
+                            null,
+                        ];
+                        messageOutQueue.unshift(notFound);
+                    } else {
+                        // TODO(gualcasas): Add timeout guard
+                        const response = await handler(message[3], message[2]);
+                        messageOutQueue.unshift(response);
+                    }
                 }
 
                 if (messageOutQueue.length) {
@@ -132,7 +158,6 @@ export async function attach<
          * // would run on a "my_rpc_notification" notification from neovim
          *
          * nvim.onNotification("*", (args, event) => {
-         *   // catch-all is always called first
          *   console.log(event);
          *   console.log(args);
          * });
@@ -142,14 +167,12 @@ export async function attach<
          * });
          * ```
          */
-        onNotification<T extends "*" | keyof EventsMap>(
-            event: T,
-            callback: (
-                args: T extends "*" ? unknown[] : EventsMap[T],
-                event: string,
-            ) => void | Promise<void>,
-        ) {
+        onNotification<T extends "*" | keyof EventsMap>(event: T, callback: NotificationHandler) {
             notificationHandlers.set(event as string, callback);
+        },
+
+        onRequest(method: string, callback: RequestHandler) {
+            requestHandlers.set(method, callback);
         },
 
         /**

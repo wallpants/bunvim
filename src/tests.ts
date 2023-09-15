@@ -15,18 +15,6 @@ const listChans = (await nvim.call("nvim_list_chans", [])) as [
 
 logger.verbose("listChans", { listChans });
 
-// await nvim.call("nvim_buf_attach", [0, true, {}]);
-
-// const execLua = await nvim.call("nvim_exec_lua", [
-//     `
-// return function()
-//     vim.print("hello from lua function from bun")
-// end`,
-//     [],
-// ]);
-
-// logger.verbose({ execLua });
-
 const autocmd = await nvim.call("nvim_create_autocmd", [
     ["CursorHold", "TextChangedI"],
     {

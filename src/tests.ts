@@ -1,5 +1,6 @@
 import { attach } from "./index.ts";
 import { logger } from "./logger.ts";
+import { type RequestResponse } from "./types.ts";
 
 logger.verbose("starting");
 const SOCKET = process.env.NVIM;
@@ -20,6 +21,7 @@ const listChans = (await nvim.call("nvim_list_chans", [])) as Channel[];
 const chan = listChans.find((chan) => chan.client?.name === "gualberto");
 if (!chan) throw Error("chan not found");
 
+nvim.onNotification("*", (args) => {});
 nvim.onNotification("gual", (args) => {});
 
 await nvim.call("nvim_create_autocmd", [
@@ -49,8 +51,9 @@ await nvim.call("nvim_subscribe", ["cursor_move"]);
 //     logger.verbose("event", { event, args });
 // });
 
-nvim.onRequest("my_func", (args, method) => {
-    return { error: null, success: "hello" };
+nvim.onRequest("my_func", (_args) => {
+    const response: RequestResponse = { error: null, success: { name: "gual" } };
+    return response;
 });
 
 // await nvim.call("nvim_exec_lua", [

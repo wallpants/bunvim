@@ -93,8 +93,13 @@ export async function attach<
                         ];
                         messageOutQueue.unshift(notFound);
                     } else {
-                        const { error, success } = await handler(args, method);
-                        const response: RPCResponse = [MessageType.RESPONSE, reqId, error, success];
+                        const result = await handler(args);
+                        const response: RPCResponse = [
+                            MessageType.RESPONSE,
+                            reqId,
+                            result.error,
+                            result.success,
+                        ];
                         messageOutQueue.unshift(response);
                     }
                 }
@@ -115,22 +120,22 @@ export async function attach<
          * @see {@link https://neovim.io/doc/user/api.html}
          *
          * @param func - function name
-         * @param params - function params
+         * @param args - function arguments, provide empty array [] if no args
          *
          * @example
          * ```ts
-         * const lineCount = await nvim.call("nvim_buf_line_count", [0]);
-         * console.log(lineCount)
+         * const currLine = await nvim.call("nvim_get_current_line", []);
+         * console.log(currLine)
          *
          * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
          * ```
          */
         call<M extends keyof ApiInfo>(
             func: M,
-            params: ApiInfo[M]["parameters"],
+            args: ApiInfo[M]["parameters"],
         ): Promise<ApiInfo[M]["returns"]> {
             const reqId = ++lastReqId;
-            const request: RPCMessage = [MessageType.REQUEST, reqId, func as string, params];
+            const request: RPCMessage = [MessageType.REQUEST, reqId, func as string, args];
 
             return new Promise((resolve, reject) => {
                 emitter.once(`response-${reqId}`, (error, result) => {
@@ -184,11 +189,11 @@ export async function attach<
          *
          * @example
          * ```ts
-         * nvim.onRequest("my_func", async (reqId, args, method) => {
-         *   logger.info(`processing ${method} call`);
-         *   const [result, error] = await asyncFunc(args);
-         *   const response: RPCResponse = [MessageType.RESPONSE, reqId, error, result];
-         *   return response;
+         * import { RequestResponse } from 'bunvim';
+         *
+         * nvim.onRequest("my_func", async (args) => {
+         *   const { error, success }: RequestResponse = await asyncFunc(args);
+         *   return { error, success };
          * });
          * ```
          */

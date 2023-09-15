@@ -67,7 +67,20 @@ export async function attach<
         socket: {
             binaryType: "uint8array",
             async data(socket, data) {
+                const acc = []
+                logger.info("length", { val: data.length });
+                logger.info("byteLength", { val: data.byteLength });
+                logger.info("byteOffset", { val: data.byteOffset });
+                logger.info("BYTES_PER_ELEMENT", { val: data.BYTES_PER_ELEMENT });
+                try {
+                    logger.info("trying");
+                    unpackr.unpack(data);
+                    logger.info("success");
+                } catch (err) {
+                    logger.error("err: ", err);
+                }
                 const message = unpackr.unpack(data) as RPCMessage;
+                logger.info("after decode");
                 if (message[0] === MessageType.NOTIFY) {
                     const [, notification, args] = message;
                     logger.verbose("INCOMING", { NOTIFICATION: message });
@@ -115,6 +128,9 @@ export async function attach<
                 if (messageOutQueue.length) {
                     processRequestQueue(socket);
                 }
+            },
+            drain(_socket) {
+                logger.warn("drain?");
             },
             timeout(_socket) {
                 logger.error("nvimSocket TIMEOUT");

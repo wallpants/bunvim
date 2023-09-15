@@ -30,7 +30,7 @@ M.setup = function()
 	local function start_bun_script()
 		local __filename = debug.getinfo(1, "S").source:sub(2)
 		local plugin_root = vim.fn.fnamemodify(__filename, ":p:h:h:h") .. "/"
-		vim.fn.jobstart("bun run src/tests.ts", {
+		vim.fn.jobstart("bun run src/neovim.ts", {
 			cwd = plugin_root,
 			stdin = "null",
 		})

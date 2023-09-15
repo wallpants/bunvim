@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "msgpackr": "^1.9.9",
+    "neovim": "^4.10.1",
     "winston": "^3.10.0"
   },
   "devDependencies": {

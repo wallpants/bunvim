@@ -1,11 +1,16 @@
-import { attach, MessageType, type RPCMessage } from "./index.ts";
+import { attach } from "./index.ts";
 import { logger } from "./logger.ts";
 
 logger.verbose("starting");
 const SOCKET = process.env.NVIM;
 if (!SOCKET) throw Error("socket missing");
 
-const nvim = await attach<{ "test-notif": [] }>({ socket: SOCKET });
+const nvim = await attach<
+    { "*": unknown[]; gual: [string, string] },
+    { my_func: [string, number, string, boolean] }
+>({
+    socket: SOCKET,
+});
 logger.verbose("attached");
 
 await nvim.call("nvim_set_client_info", ["gualberto", {}, "msgpack-rpc", {}, {}]);
@@ -14,6 +19,8 @@ type Channel = { id: number; client?: { name?: string } };
 const listChans = (await nvim.call("nvim_list_chans", [])) as Channel[];
 const chan = listChans.find((chan) => chan.client?.name === "gualberto");
 if (!chan) throw Error("chan not found");
+
+nvim.onNotification("gual", (args) => {});
 
 await nvim.call("nvim_create_autocmd", [
     ["CursorHold", "TextChangedI"],
@@ -42,9 +49,8 @@ await nvim.call("nvim_subscribe", ["cursor_move"]);
 //     logger.verbose("event", { event, args });
 // });
 
-nvim.onRequest("func_gual", (reqId, _args, _method) => {
-    const response: RPCMessage = [MessageType.RESPONSE, reqId, null, [100, 101]];
-    return response;
+nvim.onRequest("my_func", (args, method) => {
+    return { error: null, success: "hello" };
 });
 
 // await nvim.call("nvim_exec_lua", [

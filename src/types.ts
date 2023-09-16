@@ -24,16 +24,12 @@ export type RPCResponse = [
 
 export type RPCMessage = RPCRequest | RPCNotification | RPCResponse;
 
-export type NotificationsMap = { "*": unknown[]; [x: string]: unknown[] };
-export type RequestsMap = Record<string, unknown[]>;
-
 export type RequestHandler<Args = Any> = (args: Args) => Awaitable<RequestResponse>;
-
 export type NotificationHandler<Args = Any> = (args: Args, notification: string) => Awaitable<void>;
 
 export type Nvim<
-    NMap extends NotificationsMap = NotificationsMap,
-    RMap extends RequestsMap = RequestsMap,
+    NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
+    RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 > = {
     /**
      * Call a neovim function
@@ -60,20 +56,9 @@ export type Nvim<
      * @param notification - event name
      * @param callback - notification handler
      *
-     * @remarks
-     * Use `"*"` to register a catch-all notification handler.
-     *
      * @example
      * ```ts
      * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
-     *
-     * // both "*" and "my_rpc_notification" "handlers
-     * // would run on a "my_rpc_notification" notification from neovim
-     *
-     * nvim.onNotification("*", (args, event) => {
-     *   console.log(event);
-     *   console.log(args);
-     * });
      *
      * nvim.onNotification("my_rpc_notification", (args) => {
      *   console.log(args);

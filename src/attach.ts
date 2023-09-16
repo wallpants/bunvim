@@ -3,13 +3,11 @@ import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
     type NotificationHandler,
-    type NotificationsMap,
     type Nvim,
     type RPCMessage,
     type RPCRequest,
     type RPCResponse,
     type RequestHandler,
-    type RequestsMap,
 } from "./types.ts";
 // eslint-disable-next-line import/named
 import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
@@ -17,23 +15,30 @@ import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 const packr = new Packr({ useRecords: false });
 const unpackrStream = new UnpackrStream({ useRecords: false });
 
-// decode Buffer, Window, and Tabpage as numbers
-// Buffer: { id: 0, prefix: 'nvim_buf_' },
-// Window: { id: 1, prefix: 'nvim_win_' },
-// Tabpage: { id: 2, prefix: 'nvim_tabpage_' }
-addExtension({ type: 0, unpack });
-addExtension({ type: 1, unpack });
-addExtension({ type: 2, unpack });
+[0, 1, 2].forEach((type) => {
+    // decode Buffer, Window, and Tabpage as numbers
+    // Buffer: { id: 0, prefix: 'nvim_buf_' },
+    // Window: { id: 1, prefix: 'nvim_win_' },
+    // Tabpage: { id: 2, prefix: 'nvim_tabpage_' }
+    addExtension({
+        type,
+        unpack(buffer) {
+            return unpack(buffer) as number;
+        },
+    });
+});
 
 export async function attach<
-    NMap extends NotificationsMap = NotificationsMap,
-    RMap extends RequestsMap = RequestsMap,
+    NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
+    RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 >({
     socket,
     logFile,
-    logLevel = "verbose",
+    logLevel,
 }: {
-    /** neovim unix socket */
+    /**
+     * neovim unix socket
+     */
     socket: string;
     /**
      * Path to logFile.
@@ -42,7 +47,22 @@ export async function attach<
      * @example "/tmp/bunvim-logs"
      */
     logFile?: string;
-    /** @default "verbose" */
+    /**
+     * @remarks
+     * bunvim internally logs with logger.debug() and logger.error()
+     * Set logLevel higher than `debug` to hide bunvim's internal logs
+     *
+     * Levels from highest to lowest priority
+     * - error
+     * - warn
+     * - info
+     * - http
+     * - verbose
+     * - debug
+     * - silly
+     *
+     * @default "debug"
+     */
     logLevel?: string;
 }): Promise<Nvim<NMap, RMap>> {
     const logger = createLogger(logFile, logLevel);
@@ -61,6 +81,15 @@ export async function attach<
             data(_, data) {
                 unpackrStream.write(data);
             },
+            error(_socket, error) {
+                logger?.error("socket error", error);
+            },
+            end() {
+                logger?.debug("connection closed by neovim");
+            },
+            close() {
+                logger?.debug("connection closed by bunvim");
+            },
         },
     });
 
@@ -74,19 +103,16 @@ export async function attach<
             return;
         }
 
-        logger?.verbose(prettyRPCMessage(message, "out"));
+        logger?.debug(prettyRPCMessage(message, "out"));
         nvimSocket.write(packr.pack(message));
     }
 
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
-            logger?.verbose(prettyRPCMessage(message, "in"));
+            logger?.debug(prettyRPCMessage(message, "in"));
             if (message[0] === MessageType.NOTIFY) {
                 // message[1] notification name
                 // message[2] args
-                const catchAllHander = notificationHandlers.get("*");
-                void catchAllHander?.(message[2], message[1]);
-
                 const notificationHandler = notificationHandlers.get(message[1]);
                 void notificationHandler?.(message[2], message[1]);
             }
@@ -125,10 +151,8 @@ export async function attach<
                 }
             }
 
-            if (messageOutQueue.length) {
-                processMessageQueue();
-            }
-        })().catch((err) => logger?.error(err));
+            processMessageQueue();
+        })().catch((err) => logger?.error("unpackrStream error", err));
     });
 
     return {

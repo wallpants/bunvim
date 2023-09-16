@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/named
-import { Packr, UnpackrStream } from "msgpackr";
+import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 import { EventEmitter } from "node:events";
-import { createLogger } from "./logger.ts";
+import { logger } from "./logger.ts";
 import {
     MessageType,
     type NotificationHandler,
@@ -16,9 +16,16 @@ import {
 
 export * from "./types.ts";
 
-const logger = createLogger();
 const packr = new Packr({ useRecords: false });
 const unpackrStream = new UnpackrStream({ useRecords: false });
+
+// decode Buffer, Window, and Tabpage as numbers
+// Buffer: { id: 0, prefix: 'nvim_buf_' },
+addExtension({ type: 0, unpack: (value) => unpack(value) as number });
+// Window: { id: 1, prefix: 'nvim_win_' },
+addExtension({ type: 1, unpack: (value) => unpack(value) as number });
+// Tabpage: { id: 2, prefix: 'nvim_tabpage_' }
+addExtension({ type: 2, unpack: (value) => unpack(value) as number });
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,

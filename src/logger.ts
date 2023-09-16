@@ -4,7 +4,7 @@ import winston from "winston";
 const LOG_FILE = process.env.BUNVIM_LOG_FILE;
 const LOG_LEVEL = process.env.BUNVIM_LOG_LEVEL;
 
-export function createLogger() {
+function createLogger() {
     if (!LOG_FILE) {
         return winston.createLogger({
             // we must provide at least one logger or winston cries
@@ -35,3 +35,5 @@ export function createLogger() {
         ],
     });
 }
+
+export const logger = createLogger();

@@ -36,7 +36,8 @@ export async function attach<
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();
     const emitter = new EventEmitter({ captureRejections: true });
-    let messagesHandler: AnyFunction | undefined;
+    let messageOutHandler: AnyFunction | undefined;
+    let messageInHandler: AnyFunction | undefined;
 
     let lastReqId = 0;
     let awaitingResponse = false;
@@ -51,42 +52,44 @@ export async function attach<
         },
     });
 
-    function processRequestQueue() {
+    function processMessageQueue() {
         if (!messageOutQueue.length || awaitingResponse) return;
         awaitingResponse = true;
 
-        const request = messageOutQueue.shift();
-        if (!request) {
+        const message = messageOutQueue.shift();
+        if (!message) {
             logger.error("request is undefined");
             return;
         }
 
-        if (request[0] === MessageType.REQUEST) {
+        messageOutHandler?.(message);
+
+        if (message[0] === MessageType.REQUEST) {
             logger.verbose({
                 OUTGOING_REQUEST: {
-                    reqId: request[1],
-                    method: request[2],
-                    params: request[3],
+                    reqId: message[1],
+                    method: message[2],
+                    params: message[3],
                 },
             });
         }
 
-        if (request[0] === MessageType.RESPONSE) {
+        if (message[0] === MessageType.RESPONSE) {
             logger.verbose("OUTGOING", {
                 OUTGOING_RESPONSE: {
-                    reqId: request[1],
-                    error: request[2],
-                    result: request[3],
+                    reqId: message[1],
+                    error: message[2],
+                    result: message[3],
                 },
             });
         }
 
-        nvimSocket.write(packr.pack(request));
+        nvimSocket.write(packr.pack(message));
     }
 
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
-            messagesHandler?.(message);
+            messageInHandler?.(message);
             if (message[0] === MessageType.NOTIFY) {
                 // message[1] notification name
                 // message[2] args
@@ -154,7 +157,7 @@ export async function attach<
             }
 
             if (messageOutQueue.length) {
-                processRequestQueue();
+                processMessageQueue();
             }
         })().catch((err) => logger.error(err));
     });
@@ -186,12 +189,12 @@ export async function attach<
                 });
 
                 messageOutQueue.push(request);
-                processRequestQueue();
+                processMessageQueue();
             });
         },
 
         /**
-         * Register a handler for rpc messages
+         * Register a handler for outoging rpc messages
          *
          * @remarks
          * This handler will run for all received messages, useful for debugging
@@ -205,8 +208,27 @@ export async function attach<
          * });
          * ```
          */
-        onMessage(callback) {
-            messagesHandler = callback;
+        onMessageOut(callback) {
+            messageOutHandler = callback;
+        },
+
+        /**
+         * Register a handler for incoming rpc messages
+         *
+         * @remarks
+         * This handler will run for all received messages, useful for debugging
+         *
+         * @param callback - message handler
+         *
+         * @example
+         * ```ts
+         * nvim.onMessage((message: RPCMessage) => {
+         *   console.log(message);
+         * });
+         * ```
+         */
+        onMessageIn(callback) {
+            messageInHandler = callback;
         },
 
         /**

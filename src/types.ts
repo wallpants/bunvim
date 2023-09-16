@@ -38,6 +38,7 @@ export type Nvim<
         func: M,
         args: ApiInfo[M]["parameters"],
     ): Promise<ApiInfo[M]["returns"]>;
+    onMessage(cb: (message: RPCMessage) => Awaitable<void>): void;
     onNotification<N extends keyof NMap>(
         notification: N,
         callback: NotificationHandler<NMap[N]>,

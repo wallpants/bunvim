@@ -1,5 +1,4 @@
-// eslint-disable-next-line import/named
-import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
+import { type AnyFunction } from "bun";
 import { EventEmitter } from "node:events";
 import { logger } from "./logger.ts";
 import {
@@ -13,6 +12,8 @@ import {
     type RequestHandler,
     type RequestsMap,
 } from "./types.ts";
+// eslint-disable-next-line import/named
+import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 
 export * from "./types.ts";
 
@@ -35,6 +36,7 @@ export async function attach<
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();
     const emitter = new EventEmitter({ captureRejections: true });
+    let messagesHandler: AnyFunction | undefined;
 
     let lastReqId = 0;
     let awaitingResponse = false;
@@ -84,6 +86,7 @@ export async function attach<
 
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
+            messagesHandler?.(message);
             if (message[0] === MessageType.NOTIFY) {
                 // message[1] notification name
                 // message[2] args
@@ -185,6 +188,25 @@ export async function attach<
                 messageOutQueue.push(request);
                 processRequestQueue();
             });
+        },
+
+        /**
+         * Register a handler for rpc messages
+         *
+         * @remarks
+         * This handler will run for all received messages, useful for debugging
+         *
+         * @param callback - message handler
+         *
+         * @example
+         * ```ts
+         * nvim.onMessage((message: RPCMessage) => {
+         *   console.log(message);
+         * });
+         * ```
+         */
+        onMessage(callback) {
+            messagesHandler = callback;
         },
 
         /**

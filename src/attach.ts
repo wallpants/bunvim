@@ -68,13 +68,13 @@ export async function attach<
             return;
         }
 
-        logger?.verbose(prettyRPCMessage(message));
+        logger?.verbose(prettyRPCMessage(message, "out"));
         nvimSocket.write(packr.pack(message));
     }
 
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
-            logger?.verbose(prettyRPCMessage(message));
+            logger?.verbose(prettyRPCMessage(message, "in"));
             if (message[0] === MessageType.NOTIFY) {
                 // message[1] notification name
                 // message[2] args

@@ -8,7 +8,6 @@ if (!SOCKET) throw Error("socket missing");
 
 const nvim = await attach({ socket: SOCKET, logFile: LOG_FILE, logLevel: LOG_LEVEL });
 // const nvim = await attach({ socket: SOCKET });
-nvim.logger?.info("hello 1");
 
 await nvim.call("nvim_get_current_line", []);
 await nvim.call("nvim_get_current_buf", []);

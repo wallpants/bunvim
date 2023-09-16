@@ -36,12 +36,12 @@ export type Nvim<
      * @see {@link https://neovim.io/doc/user/api.html}
      *
      * @param func - function name
-     * @param args - function arguments, provide empty array [] if no args
+     * @param args - function arguments, provide empty array `[]` if no args
      *
      * @example
-     * ```ts
+     * ```typescript
      * const currLine = await nvim.call("nvim_get_current_line", []);
-     * console.log(currLine);
+     * nvim.logger?.info(currLine);
      *
      * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
      * ```
@@ -57,11 +57,11 @@ export type Nvim<
      * @param callback - notification handler
      *
      * @example
-     * ```ts
+     * ```typescript
      * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
      *
      * nvim.onNotification("my_rpc_notification", (args) => {
-     *   console.log(args);
+     *   nvim.logger?.info(args);
      * });
      * ```
      */
@@ -76,7 +76,7 @@ export type Nvim<
      * @param callback - request handler
      *
      * @example
-     * ```ts
+     * ```typescript
      * import { RequestResponse } from 'bunvim';
      *
      * nvim.onRequest("my_func", async (args) => {

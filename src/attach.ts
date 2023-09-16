@@ -37,7 +37,27 @@ export async function attach<
     logLevel,
 }: {
     /**
-     * neovim unix socket
+     * neovim socket
+     *
+     * Usually you get this value from `process.env.NVIM` which is set
+     * automagically by neovim on any child processes
+     *
+     * @see {@link https://neovim.io/doc/user/eval.html#%24NVIM}
+     * @see {@link https://neovim.io/doc/user/eval.html#v%3Aservername}
+     *
+     * @example
+     * ```lua
+     * -- init.lua
+     * vim.fn.jobstart("bun run src/main.ts", { cwd = root_dir })
+     * ```
+     *
+     * ```typescript
+     * // src/main.ts
+     * const socket = process.env.NVIM;
+     * if (!socket) throw Error("socket missing");
+     *
+     * const nvim = await attach({ socket });
+     * ```
      */
     socket: string;
     /**
@@ -49,7 +69,7 @@ export async function attach<
     logFile?: string;
     /**
      * @remarks
-     * bunvim internally logs with logger.debug() and logger.error()
+     * bunvim internally logs with `logger.debug()` and `logger.error()`
      * Set logLevel higher than `debug` to hide bunvim's internal logs
      *
      * Levels from highest to lowest priority

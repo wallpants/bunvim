@@ -1,5 +1,5 @@
-import { type Socket } from "bun";
-import { Packr, Unpackr } from "msgpackr";
+// eslint-disable-next-line import/named
+import { Packr, UnpackrStream } from "msgpackr";
 import { EventEmitter } from "node:events";
 import { type ApiInfo } from "./generated-api-info.ts";
 import { createLogger } from "./logger.ts";
@@ -13,12 +13,12 @@ import {
     type RequestHandler,
     type RequestsMap,
 } from "./types.ts";
+
 export * from "./types.ts";
 
-export const logger = createLogger(process.env.BUNVIM_LOG_FILE, process.env.BUNVIM_LOG_LEVEL);
-
-const packr = new Packr();
-const unpackr = new Unpackr({ useRecords: false });
+const logger = createLogger();
+const packr = new Packr({ useRecords: false });
+const unpackrStream = new UnpackrStream({ useRecords: false });
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,
@@ -32,16 +32,29 @@ export async function attach<
     let lastReqId = 0;
     let awaitingResponse = false;
 
-    function processRequestQueue(socket: Socket) {
+    const nvimSocket = await Bun.connect({
+        unix: socket,
+        socket: {
+            binaryType: "uint8array",
+            data(_, data) {
+                unpackrStream.write(data);
+            },
+        },
+    });
+
+    function processRequestQueue() {
         if (!messageOutQueue.length || awaitingResponse) return;
         awaitingResponse = true;
 
         const request = messageOutQueue.shift();
-        if (!request) return;
+        if (!request) {
+            logger.error("request is undefined");
+            return;
+        }
 
         if (request[0] === MessageType.REQUEST) {
-            logger.verbose("OUTGOING", {
-                REQUEST: {
+            logger.verbose({
+                OUTGOING_REQUEST: {
                     reqId: request[1],
                     method: request[2],
                     params: request[3],
@@ -51,7 +64,7 @@ export async function attach<
 
         if (request[0] === MessageType.RESPONSE) {
             logger.verbose("OUTGOING", {
-                RESPONSE: {
+                OUTGOING_RESPONSE: {
                     reqId: request[1],
                     error: request[2],
                     result: request[3],
@@ -59,89 +72,81 @@ export async function attach<
             });
         }
 
-        socket.write(packr.pack(request));
+        nvimSocket.write(packr.pack(request));
     }
 
-    const nvimSocket = await Bun.connect({
-        unix: socket,
-        socket: {
-            binaryType: "uint8array",
-            async data(socket, data) {
-                const acc = []
-                logger.info("length", { val: data.length });
-                logger.info("byteLength", { val: data.byteLength });
-                logger.info("byteOffset", { val: data.byteOffset });
-                logger.info("BYTES_PER_ELEMENT", { val: data.BYTES_PER_ELEMENT });
-                try {
-                    logger.info("trying");
-                    unpackr.unpack(data);
-                    logger.info("success");
-                } catch (err) {
-                    logger.error("err: ", err);
+    unpackrStream.on("data", (message: RPCMessage) => {
+        (async () => {
+            if (message[0] === MessageType.NOTIFY) {
+                // message[1] notification name
+                // message[2] args
+                logger.verbose({
+                    INCOMING_NOTIFICATION: {
+                        event: message[1],
+                        args: message[2],
+                    },
+                });
+
+                const catchAllHander = notificationHandlers.get("*");
+                void catchAllHander?.(message[2], message[1]);
+
+                const notificationHandler = notificationHandlers.get(message[1]);
+                void notificationHandler?.(message[2], message[1]);
+            }
+
+            if (message[0] === MessageType.RESPONSE) {
+                // message[1] reqId
+                // message[2] error
+                // message[3] result
+                logger.verbose({
+                    INCOMING_RESPONSE: {
+                        reqId: message[1],
+                        error: message[2],
+                        result: message[3],
+                    },
+                });
+                emitter.emit(`response-${message[1]}`, message[2], message[3]);
+                awaitingResponse = false;
+            }
+
+            if (message[0] === MessageType.REQUEST) {
+                // message[1] reqId
+                // message[2] method name
+                // message[3] args
+                logger.verbose({
+                    INCOMING_REQUEST: {
+                        reqId: message[1],
+                        method: message[2],
+                        args: message[3],
+                    },
+                });
+
+                const handler = requestHandlers.get(message[2]);
+
+                if (!handler) {
+                    const notFound: RPCResponse = [
+                        MessageType.RESPONSE,
+                        message[1],
+                        `no handler for method ${message[2]} found`,
+                        null,
+                    ];
+                    messageOutQueue.unshift(notFound);
+                } else {
+                    const { error, success } = await handler(message[3]);
+                    const response: RPCResponse = [
+                        MessageType.RESPONSE,
+                        message[1],
+                        error,
+                        success,
+                    ];
+                    messageOutQueue.unshift(response);
                 }
-                const message = unpackr.unpack(data) as RPCMessage;
-                logger.info("after decode");
-                if (message[0] === MessageType.NOTIFY) {
-                    const [, notification, args] = message;
-                    logger.verbose("INCOMING", { NOTIFICATION: message });
+            }
 
-                    const catchAllHander = notificationHandlers.get("*");
-                    void catchAllHander?.(args, notification);
-
-                    const notificationHandler = notificationHandlers.get(notification);
-                    void notificationHandler?.(args, notification);
-                }
-
-                if (message[0] === MessageType.RESPONSE) {
-                    const [, reqId, error, result] = message;
-                    logger.verbose("INCOMING", { RESPONSE: { reqId, error, result } });
-                    emitter.emit(`response-${reqId}`, error, result);
-                    awaitingResponse = false;
-                }
-
-                if (message[0] === MessageType.REQUEST) {
-                    const [, reqId, method, args] = message;
-                    logger.verbose("INCOMING", { REQUEST: { reqId, method, args } });
-
-                    const handler = requestHandlers.get(method);
-
-                    if (!handler) {
-                        const notFound: RPCResponse = [
-                            MessageType.RESPONSE,
-                            reqId,
-                            `no handler for method ${method} found`,
-                            null,
-                        ];
-                        messageOutQueue.unshift(notFound);
-                    } else {
-                        const result = await handler(args);
-                        const response: RPCResponse = [
-                            MessageType.RESPONSE,
-                            reqId,
-                            result.error,
-                            result.success,
-                        ];
-                        messageOutQueue.unshift(response);
-                    }
-                }
-
-                if (messageOutQueue.length) {
-                    processRequestQueue(socket);
-                }
-            },
-            drain(_socket) {
-                logger.warn("drain?");
-            },
-            timeout(_socket) {
-                logger.error("nvimSocket TIMEOUT");
-            },
-            error(_socket, error) {
-                logger.error("nvimSocket ERROR", error);
-            },
-            end() {
-                logger.verbose("neovim closed connection");
-            },
-        },
+            if (messageOutQueue.length) {
+                processRequestQueue();
+            }
+        })().catch((err) => logger.error(err));
     });
 
     return {
@@ -174,7 +179,7 @@ export async function attach<
                 });
 
                 messageOutQueue.push(request);
-                processRequestQueue(nvimSocket);
+                processRequestQueue();
             });
         },
 

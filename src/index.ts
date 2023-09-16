@@ -1,12 +1,12 @@
 // eslint-disable-next-line import/named
 import { Packr, UnpackrStream } from "msgpackr";
 import { EventEmitter } from "node:events";
-import { type ApiInfo } from "./generated-api-info.ts";
 import { createLogger } from "./logger.ts";
 import {
     MessageType,
     type NotificationHandler,
     type NotificationsMap,
+    type Nvim,
     type RPCMessage,
     type RPCRequest,
     type RPCResponse,
@@ -23,7 +23,7 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,
     RMap extends RequestsMap = RequestsMap,
->({ socket }: { socket: string }) {
+>({ socket }: { socket: string }): Promise<Nvim<NMap, RMap>> {
     const messageOutQueue: RPCMessage[] = [];
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();
@@ -165,17 +165,14 @@ export async function attach<
          * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
          * ```
          */
-        call<M extends keyof ApiInfo>(
-            func: M,
-            args: ApiInfo[M]["parameters"],
-        ): Promise<ApiInfo[M]["returns"]> {
+        call(func, args) {
             const reqId = ++lastReqId;
             const request: RPCRequest = [MessageType.REQUEST, reqId, func as string, args];
 
             return new Promise((resolve, reject) => {
                 emitter.once(`response-${reqId}`, (error, result) => {
                     if (error) reject(error);
-                    resolve(result as ApiInfo[M]["returns"]);
+                    resolve(result as unknown);
                 });
 
                 messageOutQueue.push(request);
@@ -209,10 +206,7 @@ export async function attach<
          * });
          * ```
          */
-        onNotification<N extends keyof NMap>(
-            notification: N,
-            callback: NotificationHandler<NMap[N]>,
-        ) {
+        onNotification(notification, callback) {
             notificationHandlers.set(notification as string, callback);
         },
 
@@ -232,7 +226,7 @@ export async function attach<
          * });
          * ```
          */
-        onRequest<M extends keyof RMap>(method: M, callback: RequestHandler<RMap[M]>) {
+        onRequest(method, callback) {
             requestHandlers.set(method as string, callback);
         },
 

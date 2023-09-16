@@ -1,3 +1,5 @@
+import { type ApiInfo } from "./generated-api-info.ts";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Any = any;
 export type Awaitable<T> = T | Promise<T>;
@@ -27,3 +29,19 @@ export type RequestsMap = Record<string, unknown[]>;
 export type RequestHandler<Args = Any> = (args: Args) => Awaitable<RequestResponse>;
 
 export type NotificationHandler<Args = Any> = (args: Args, notification: string) => Awaitable<void>;
+
+export type Nvim<
+    NMap extends NotificationsMap = NotificationsMap,
+    RMap extends RequestsMap = RequestsMap,
+> = {
+    call<M extends keyof ApiInfo>(
+        func: M,
+        args: ApiInfo[M]["parameters"],
+    ): Promise<ApiInfo[M]["returns"]>;
+    onNotification<N extends keyof NMap>(
+        notification: N,
+        callback: NotificationHandler<NMap[N]>,
+    ): void;
+    onRequest<M extends keyof RMap>(method: M, callback: RequestHandler<RMap[M]>): void;
+    detach(): void;
+};

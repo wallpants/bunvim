@@ -188,7 +188,7 @@ export async function attach<
         },
 
         /**
-         * Register a handler for rpc notifications
+         * Register/Update a handler for rpc notifications
          *
          * @param notification - event name
          * @param callback - notification handler
@@ -218,7 +218,7 @@ export async function attach<
         },
 
         /**
-         * Register a handler for rpc requests
+         * Register/Update a handler for rpc requests
          *
          * @param method - method name
          * @param callback - request handler

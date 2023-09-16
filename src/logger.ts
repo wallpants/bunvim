@@ -2,21 +2,13 @@ import { createWriteStream } from "node:fs";
 import winston from "winston";
 import { MessageType, type RPCMessage } from "./types.ts";
 
-const LOG_FILE = process.env.BUNVIM_LOG_FILE;
-const LOG_LEVEL = process.env.BUNVIM_LOG_LEVEL;
+export function createLogger(filePath?: string, logLevel = "verbose") {
+    if (!filePath) return;
 
-function createLogger() {
-    if (!LOG_FILE) {
-        return winston.createLogger({
-            // we must provide at least one logger or winston cries
-            transports: new winston.transports.Console({ silent: true }),
-        });
-    }
-
-    const stream = createWriteStream(LOG_FILE);
+    const stream = createWriteStream(filePath);
 
     return winston.createLogger({
-        level: LOG_LEVEL ?? "verbose",
+        level: logLevel,
         transports: [
             new winston.transports.Stream({
                 stream,
@@ -37,11 +29,6 @@ function createLogger() {
     });
 }
 
-export const logger = createLogger();
-
-/**
- * Transform RPCMessage to an object with named values
- */
 export function prettyRPCMessage(message: RPCMessage) {
     if (message[0] === MessageType.REQUEST) {
         return {
@@ -63,6 +50,7 @@ export function prettyRPCMessage(message: RPCMessage) {
         };
     }
 
+    // if (message[0] === MessageType.NOTIFY)
     return {
         OUTGOING_NOTIFICATION: {
             event: message[1],

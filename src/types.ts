@@ -1,3 +1,4 @@
+import type winston from "winston";
 import { type ApiInfo } from "./generated-api-info.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,12 +39,13 @@ export type Nvim<
         func: M,
         args: ApiInfo[M]["parameters"],
     ): Promise<ApiInfo[M]["returns"]>;
-    onMessageOut(cb: (message: RPCMessage) => Awaitable<void>): void;
-    onMessageIn(cb: (message: RPCMessage) => Awaitable<void>): void;
+    // onMessageOut(cb: (message: RPCMessage) => Awaitable<void>): void;
+    // onMessageIn(cb: (message: RPCMessage) => Awaitable<void>): void;
     onNotification<N extends keyof NMap>(
         notification: N,
         callback: NotificationHandler<NMap[N]>,
     ): void;
     onRequest<M extends keyof RMap>(method: M, callback: RequestHandler<RMap[M]>): void;
     detach(): void;
+    logger: winston.Logger | undefined;
 };

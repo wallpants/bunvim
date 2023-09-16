@@ -1,6 +1,5 @@
-import { type AnyFunction } from "bun";
 import { EventEmitter } from "node:events";
-import { logger, prettyRPCMessage } from "./logger.ts";
+import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
     type NotificationHandler,
@@ -29,13 +28,22 @@ addExtension({ type: 2, unpack: (value) => unpack(value) as number });
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,
     RMap extends RequestsMap = RequestsMap,
->({ socket }: { socket: string }): Promise<Nvim<NMap, RMap>> {
+>({
+    socket,
+    logFile,
+    logLevel = "verbose",
+}: {
+    socket: string;
+    logFile?: string;
+    logLevel?: string;
+}): Promise<Nvim<NMap, RMap>> {
+    const logger = createLogger(logFile, logLevel);
     const messageOutQueue: RPCMessage[] = [];
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();
     const emitter = new EventEmitter({ captureRejections: true });
-    let messageOutHandler: AnyFunction | undefined;
-    let messageInHandler: AnyFunction | undefined;
+    // let messageOutHandler: AnyFunction | undefined;
+    // let messageInHandler: AnyFunction | undefined;
 
     let lastReqId = 0;
     let awaitingResponse = false;
@@ -56,19 +64,17 @@ export async function attach<
 
         const message = messageOutQueue.shift();
         if (!message) {
-            logger.error("request is undefined");
+            logger?.error("request is undefined");
             return;
         }
 
-        messageOutHandler?.(message);
-        logger.verbose(prettyRPCMessage(message));
+        logger?.verbose(prettyRPCMessage(message));
         nvimSocket.write(packr.pack(message));
     }
 
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
-            messageInHandler?.(message);
-            logger.verbose(prettyRPCMessage(message));
+            logger?.verbose(prettyRPCMessage(message));
             if (message[0] === MessageType.NOTIFY) {
                 // message[1] notification name
                 // message[2] args
@@ -116,7 +122,7 @@ export async function attach<
             if (messageOutQueue.length) {
                 processMessageQueue();
             }
-        })().catch((err) => logger.error(err));
+        })().catch((err) => logger?.error(err));
     });
 
     return {
@@ -165,9 +171,9 @@ export async function attach<
          * });
          * ```
          */
-        onMessageOut(callback) {
-            messageOutHandler = callback;
-        },
+        // onMessageOut(callback) {
+        //     messageOutHandler = callback;
+        // },
 
         /**
          * Register a handler for incoming rpc messages
@@ -184,9 +190,9 @@ export async function attach<
          * });
          * ```
          */
-        onMessageIn(callback) {
-            messageInHandler = callback;
-        },
+        // onMessageIn(callback) {
+        //     messageInHandler = callback;
+        // },
 
         /**
          * Register/Update a handler for rpc notifications
@@ -244,5 +250,10 @@ export async function attach<
         detach() {
             nvimSocket.end();
         },
+
+        /**
+         * reference to winston logger
+         */
+        logger: logger,
     };
 }

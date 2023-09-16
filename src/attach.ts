@@ -19,11 +19,11 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
 
 // decode Buffer, Window, and Tabpage as numbers
 // Buffer: { id: 0, prefix: 'nvim_buf_' },
-addExtension({ type: 0, unpack: (value) => unpack(value) as number });
 // Window: { id: 1, prefix: 'nvim_win_' },
-addExtension({ type: 1, unpack: (value) => unpack(value) as number });
 // Tabpage: { id: 2, prefix: 'nvim_tabpage_' }
-addExtension({ type: 2, unpack: (value) => unpack(value) as number });
+addExtension({ type: 0, unpack });
+addExtension({ type: 1, unpack });
+addExtension({ type: 2, unpack });
 
 export async function attach<
     NMap extends NotificationsMap = NotificationsMap,
@@ -33,8 +33,16 @@ export async function attach<
     logFile,
     logLevel = "verbose",
 }: {
+    /** neovim unix socket */
     socket: string;
+    /**
+     * Path to logFile.
+     * `logger` is disabled if no `logFile` is provided
+     *
+     * @example "/tmp/bunvim-logs"
+     */
     logFile?: string;
+    /** @default "verbose" */
     logLevel?: string;
 }): Promise<Nvim<NMap, RMap>> {
     const logger = createLogger(logFile, logLevel);
@@ -42,8 +50,6 @@ export async function attach<
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();
     const emitter = new EventEmitter({ captureRejections: true });
-    // let messageOutHandler: AnyFunction | undefined;
-    // let messageInHandler: AnyFunction | undefined;
 
     let lastReqId = 0;
     let awaitingResponse = false;
@@ -64,7 +70,7 @@ export async function attach<
 
         const message = messageOutQueue.shift();
         if (!message) {
-            logger?.error("request is undefined");
+            logger?.error("Cannot process undefined message");
             return;
         }
 
@@ -126,21 +132,6 @@ export async function attach<
     });
 
     return {
-        /**
-         * Call a neovim function
-         * @see {@link https://neovim.io/doc/user/api.html}
-         *
-         * @param func - function name
-         * @param args - function arguments, provide empty array [] if no args
-         *
-         * @example
-         * ```ts
-         * const currLine = await nvim.call("nvim_get_current_line", []);
-         * console.log(currLine);
-         *
-         * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
-         * ```
-         */
         call(func, args) {
             const reqId = ++lastReqId;
             const request: RPCRequest = [MessageType.REQUEST, reqId, func as string, args];
@@ -155,105 +146,15 @@ export async function attach<
                 processMessageQueue();
             });
         },
-
-        /**
-         * Register a handler for outoging rpc messages
-         *
-         * @remarks
-         * This handler will run for all received messages, useful for debugging
-         *
-         * @param callback - message handler
-         *
-         * @example
-         * ```ts
-         * nvim.onMessage((message: RPCMessage) => {
-         *   console.log(message);
-         * });
-         * ```
-         */
-        // onMessageOut(callback) {
-        //     messageOutHandler = callback;
-        // },
-
-        /**
-         * Register a handler for incoming rpc messages
-         *
-         * @remarks
-         * This handler will run for all received messages, useful for debugging
-         *
-         * @param callback - message handler
-         *
-         * @example
-         * ```ts
-         * nvim.onMessage((message: RPCMessage) => {
-         *   console.log(message);
-         * });
-         * ```
-         */
-        // onMessageIn(callback) {
-        //     messageInHandler = callback;
-        // },
-
-        /**
-         * Register/Update a handler for rpc notifications
-         *
-         * @param notification - event name
-         * @param callback - notification handler
-         *
-         * @remarks
-         * Use `"*"` to register a catch-all notification handler.
-         *
-         * @example
-         * ```ts
-         * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
-         *
-         * // both "*" and "my_rpc_notification" "handlers
-         * // would run on a "my_rpc_notification" notification from neovim
-         *
-         * nvim.onNotification("*", (args, event) => {
-         *   console.log(event);
-         *   console.log(args);
-         * });
-         *
-         * nvim.onNotification("my_rpc_notification", (args) => {
-         *   console.log(args);
-         * });
-         * ```
-         */
         onNotification(notification, callback) {
             notificationHandlers.set(notification as string, callback);
         },
-
-        /**
-         * Register/Update a handler for rpc requests
-         *
-         * @param method - method name
-         * @param callback - request handler
-         *
-         * @example
-         * ```ts
-         * import { RequestResponse } from 'bunvim';
-         *
-         * nvim.onRequest("my_func", async (args) => {
-         *   const { error, success }: RequestResponse = await asyncFunc(args);
-         *   return { error, success };
-         * });
-         * ```
-         */
         onRequest(method, callback) {
             requestHandlers.set(method as string, callback);
         },
-
-        /**
-         * Close socket connection to neovim
-         */
         detach() {
             nvimSocket.end();
         },
-
-        /**
-         * reference to winston logger
-         */
         logger: logger,
     };
 }

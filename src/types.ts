@@ -35,17 +35,79 @@ export type Nvim<
     NMap extends NotificationsMap = NotificationsMap,
     RMap extends RequestsMap = RequestsMap,
 > = {
+    /**
+     * Call a neovim function
+     * @see {@link https://neovim.io/doc/user/api.html}
+     *
+     * @param func - function name
+     * @param args - function arguments, provide empty array [] if no args
+     *
+     * @example
+     * ```ts
+     * const currLine = await nvim.call("nvim_get_current_line", []);
+     * console.log(currLine);
+     *
+     * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
+     * ```
+     */
     call<M extends keyof ApiInfo>(
         func: M,
         args: ApiInfo[M]["parameters"],
     ): Promise<ApiInfo[M]["returns"]>;
-    // onMessageOut(cb: (message: RPCMessage) => Awaitable<void>): void;
-    // onMessageIn(cb: (message: RPCMessage) => Awaitable<void>): void;
+    /**
+     * Register/Update a handler for rpc notifications
+     *
+     * @param notification - event name
+     * @param callback - notification handler
+     *
+     * @remarks
+     * Use `"*"` to register a catch-all notification handler.
+     *
+     * @example
+     * ```ts
+     * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
+     *
+     * // both "*" and "my_rpc_notification" "handlers
+     * // would run on a "my_rpc_notification" notification from neovim
+     *
+     * nvim.onNotification("*", (args, event) => {
+     *   console.log(event);
+     *   console.log(args);
+     * });
+     *
+     * nvim.onNotification("my_rpc_notification", (args) => {
+     *   console.log(args);
+     * });
+     * ```
+     */
     onNotification<N extends keyof NMap>(
         notification: N,
         callback: NotificationHandler<NMap[N]>,
     ): void;
+    /**
+     * Register/Update a handler for rpc requests
+     *
+     * @param method - method name
+     * @param callback - request handler
+     *
+     * @example
+     * ```ts
+     * import { RequestResponse } from 'bunvim';
+     *
+     * nvim.onRequest("my_func", async (args) => {
+     *   const { error, success }: RequestResponse = await asyncFunc(args);
+     *   return { error, success };
+     * });
+     * ```
+     */
     onRequest<M extends keyof RMap>(method: M, callback: RequestHandler<RMap[M]>): void;
+    /**
+     * Close socket connection to neovim
+     */
     detach(): void;
+    /**
+     * Reference to winston logger. `undefined` if no `logFile` provided
+     * to `attach`
+     */
     logger: winston.Logger | undefined;
 };

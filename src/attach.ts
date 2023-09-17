@@ -66,7 +66,7 @@ export async function attach<
      *
      * @example "/tmp/bunvim-logs"
      */
-    logFile?: string;
+    logFile?: string | undefined;
     /**
      * @remarks
      * bunvim internally logs with `logger.debug()` and `logger.error()`

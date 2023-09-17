@@ -83,7 +83,7 @@ export async function attach<
      *
      * @default "debug"
      */
-    logLevel?: string;
+    logLevel?: string | undefined;
 }): Promise<Nvim<NMap, RMap>> {
     const logger = createLogger(logFile, logLevel);
     const messageOutQueue: RPCMessage[] = [];

@@ -2,6 +2,8 @@ import { EventEmitter } from "node:events";
 import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
+    type Client,
+    type LogLevel,
     type NotificationHandler,
     type Nvim,
     type RPCMessage,
@@ -33,7 +35,8 @@ export async function attach<
     RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 >({
     socket,
-    logFile,
+    client,
+    // logFile,
     logLevel,
 }: {
     /**
@@ -60,13 +63,14 @@ export async function attach<
      * ```
      */
     socket: string;
+
     /**
-     * Path to logFile.
-     * `logger` is disabled if no `logFile` is provided
-     *
-     * @example "/tmp/bunvim-logs"
+     * RPC client info
+     * This is sent to neovim on-connection-open by calling `nvim_set_client_info()`
+     * @see {@link https://neovim.io/doc/user/api.html#nvim_set_client_info()}
      */
-    logFile?: string | undefined;
+    client: Client;
+
     /**
      * @remarks
      * bunvim internally logs with `logger.debug()` and `logger.error()`
@@ -83,9 +87,9 @@ export async function attach<
      *
      * @default "debug"
      */
-    logLevel?: string | undefined;
+    logLevel?: LogLevel | undefined;
 }): Promise<Nvim<NMap, RMap>> {
-    const logger = createLogger(logFile, logLevel);
+    const logger = createLogger(client, logLevel);
     const messageOutQueue: RPCMessage[] = [];
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();

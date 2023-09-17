@@ -1,8 +1,10 @@
 import winston from "winston";
-import { MessageType, type RPCMessage } from "./types.ts";
+import { MessageType, type Client, type RPCMessage } from "./types.ts";
 
-export function createLogger(filePath?: string, logLevel = "debug") {
-    if (!filePath) return;
+export function createLogger(client: Client, logLevel?: string) {
+    if (!logLevel) return;
+
+    const filePath = `/tmp/${client.name}.bunvim.logs`;
 
     return winston.createLogger({
         level: logLevel,

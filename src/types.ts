@@ -5,6 +5,33 @@ import { type ApiInfo } from "./generated-api-info.ts";
 export type Any = any;
 export type Awaitable<T> = T | Promise<T>;
 
+export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
+
+export type Client = {
+    /**
+     * `name` can be used to find channel id on neovim.
+     * It's also used for logging
+     *
+     * ```lua
+     * -- look for channel.client.name in channel list
+     * local chans_list = vim.fn.nvim_list_chans()
+     * ```
+     */
+    name: string;
+    version?: {
+        /** major version (defaults to 0 if not set, for no release yet) */
+        major?: number;
+        /** minor version */
+        minor?: number;
+        /** patch number */
+        patch?: number;
+        /** string describing a prerelease, like "dev" or "beta1" */
+        prerelease?: string;
+        /** hash or similar identifier of commit */
+        commit?: string;
+    };
+};
+
 export enum MessageType {
     REQUEST = 0,
     RESPONSE = 1,

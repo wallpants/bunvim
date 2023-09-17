@@ -6,7 +6,7 @@
     "url": "git+https://github.com/gualcasas/bunvim.git"
   },
   "bin": {
-    "bunvim": "src/cli.ts"
+    "bunvim": "src/cli/index.ts"
   },
   "exports": {
     "types": "./src/index.ts",
@@ -20,6 +20,7 @@
     "logs": "tail -F -n 0 \"$BUNVIM_LOG_FILE\""
   },
   "dependencies": {
+    "commander": "^11.0.0",
     "msgpackr": "^1.9.9",
     "neovim": "^4.10.1",
     "winston": "^3.10.0"

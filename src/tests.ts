@@ -6,7 +6,10 @@ if (!SOCKET) throw Error("socket missing");
 const nvim = await attach({
     socket: SOCKET,
     client: { name: "bunvim" },
-    logLevel: "debug",
+    logging: {
+        level: "debug",
+        file: "./test-file.logs",
+    },
 });
 
 // await nvim.call("nvim_exec_lua", [

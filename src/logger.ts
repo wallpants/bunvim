@@ -1,16 +1,17 @@
+import { resolve } from "node:path";
 import winston from "winston";
 import { MessageType, type Client, type RPCMessage } from "./types.ts";
 
-export function createLogger(client: Client, logLevel?: string) {
-    if (!logLevel) return;
+export function createLogger(client: Client, logging?: { level: string; file?: string }) {
+    if (!logging) return;
 
-    const filePath = `/tmp/${client.name}.bunvim.logs`;
+    const defaultFilePath = `/tmp/${client.name}.bunvim.logs`;
 
-    return winston.createLogger({
-        level: logLevel,
+    const logger = winston.createLogger({
+        level: logging.level,
         transports: [
             new winston.transports.File({
-                filename: filePath,
+                filename: defaultFilePath,
                 format: winston.format.combine(
                     winston.format.colorize(),
                     winston.format.timestamp({ format: "HH:mm:ss.SSS" }),
@@ -18,8 +19,13 @@ export function createLogger(client: Client, logLevel?: string) {
                 ),
             }),
             new winston.transports.File({
-                filename: filePath,
+                filename: defaultFilePath,
                 format: winston.format.combine(
+                    winston.format((info) => {
+                        // @ts-expect-error ts mad we delete non-optional prop `level`
+                        delete info.level;
+                        return info;
+                    })(),
                     winston.format.prettyPrint({
                         colorize: true,
                     }),
@@ -27,6 +33,18 @@ export function createLogger(client: Client, logLevel?: string) {
             }),
         ],
     });
+
+    if (logging.file) {
+        const resolved = resolve(logging.file);
+        logger.add(
+            new winston.transports.File({
+                filename: resolved,
+                format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+            }),
+        );
+    }
+
+    return logger;
 }
 
 export function prettyRPCMessage(message: RPCMessage, direction: "out" | "in") {

@@ -28,13 +28,8 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
     });
 });
 
-export const attach: Attach = async ({
-    socket,
-    client,
-    // logFile,
-    logLevel,
-}) => {
-    const logger = createLogger(client, logLevel);
+export const attach: Attach = async ({ socket, client, logging }) => {
+    const logger = createLogger(client, logging);
     const messageOutQueue: RPCMessage[] = [];
     const notificationHandlers = new Map<string, NotificationHandler>();
     const requestHandlers = new Map<string, RequestHandler>();

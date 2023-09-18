@@ -43,23 +43,24 @@ export type Attach<
      */
     client: Client;
 
-    /**
-     * @remarks
-     * bunvim internally logs with `logger.debug()` and `logger.error()`
-     * Set logLevel higher than `debug` to hide bunvim's internal logs
-     *
-     * Levels from highest to lowest priority
-     * - error
-     * - warn
-     * - info
-     * - http
-     * - verbose
-     * - debug
-     * - silly
-     *
-     * @default "debug"
-     */
-    logLevel?: LogLevel | undefined;
+    logging?: {
+        /**
+         * @remarks
+         * bunvim internally logs with `logger.debug()` and `logger.error()`
+         * Set logLevel higher than `debug` to not display bunvim's internal logs
+         *
+         * Levels from highest to lowest priority
+         * - error
+         * - warn
+         * - info
+         * - http
+         * - verbose
+         * - debug
+         * - silly
+         */
+        level: LogLevel;
+        file?: string | undefined;
+    };
 }) => Promise<Nvim<NMap, RMap>>;
 
 export type Client = {

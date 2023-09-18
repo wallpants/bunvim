@@ -1,5 +1,4 @@
 import { program } from "commander";
-import {} from "winston";
 import { version } from "../../package.json";
 
 program.name("bunvim").description("CLI to work the neovim's bun client").version(version);

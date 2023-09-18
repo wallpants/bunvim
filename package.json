@@ -1,12 +1,12 @@
 {
   "name": "bunvim",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "author": "Gual Casas",
   "repository": {
     "url": "git+https://github.com/gualcasas/bunvim.git"
   },
   "bin": {
-    "bunvim": "src/cli/index.ts"
+    "bunvim": "./src/cli/index.ts"
   },
   "exports": {
     "types": "./src/index.ts",

@@ -43,7 +43,7 @@ program
     .option("-o, --outDir <path>", "Path to dir where types file will be created.", validateOutDir)
     .option(
         "-l, --level <number>",
-        "Include info up to specified api level (inclusive).\nLeave unset to include all.\nDeprecated are excluded by default.",
+        "Include info up to specified api level (inclusive). Leave unset to include all. Deprecated are excluded by default.",
         validateLevel,
     )
     .action(async ({ level, outDir }: { level?: number; outDir?: string }) => {

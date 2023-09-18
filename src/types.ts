@@ -7,6 +7,61 @@ export type Awaitable<T> = T | Promise<T>;
 
 export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
 
+export type Attach<
+    NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
+    RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
+> = (config: {
+    /**
+     * neovim socket
+     *
+     * Usually you get this value from `process.env.NVIM` which is set
+     * automagically by neovim on any child processes
+     *
+     * @see {@link https://neovim.io/doc/user/eval.html#%24NVIM}
+     * @see {@link https://neovim.io/doc/user/eval.html#v%3Aservername}
+     *
+     * @example
+     * ```lua
+     * -- init.lua
+     * vim.fn.jobstart("bun run src/main.ts", { cwd = root_dir })
+     * ```
+     *
+     * ```typescript
+     * // src/main.ts
+     * const socket = process.env.NVIM;
+     * if (!socket) throw Error("socket missing");
+     *
+     * const nvim = await attach({ socket });
+     * ```
+     */
+    socket: string;
+
+    /**
+     * RPC client info
+     * This is sent to neovim on-connection-open by calling `nvim_set_client_info()`
+     * @see {@link https://neovim.io/doc/user/api.html#nvim_set_client_info()}
+     */
+    client: Client;
+
+    /**
+     * @remarks
+     * bunvim internally logs with `logger.debug()` and `logger.error()`
+     * Set logLevel higher than `debug` to hide bunvim's internal logs
+     *
+     * Levels from highest to lowest priority
+     * - error
+     * - warn
+     * - info
+     * - http
+     * - verbose
+     * - debug
+     * - silly
+     *
+     * @default "debug"
+     */
+    logLevel?: LogLevel | undefined;
+}) => Promise<Nvim<NMap, RMap>>;
+
 export type Client = {
     /**
      * `name` can be used to find channel id on neovim.

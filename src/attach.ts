@@ -2,10 +2,8 @@ import { EventEmitter } from "node:events";
 import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
-    type Client,
-    type LogLevel,
+    type Attach,
     type NotificationHandler,
-    type Nvim,
     type RPCMessage,
     type RPCRequest,
     type RPCResponse,
@@ -30,65 +28,12 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
     });
 });
 
-export async function attach<
-    NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
-    RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
->({
+export const attach: Attach = async ({
     socket,
     client,
     // logFile,
     logLevel,
-}: {
-    /**
-     * neovim socket
-     *
-     * Usually you get this value from `process.env.NVIM` which is set
-     * automagically by neovim on any child processes
-     *
-     * @see {@link https://neovim.io/doc/user/eval.html#%24NVIM}
-     * @see {@link https://neovim.io/doc/user/eval.html#v%3Aservername}
-     *
-     * @example
-     * ```lua
-     * -- init.lua
-     * vim.fn.jobstart("bun run src/main.ts", { cwd = root_dir })
-     * ```
-     *
-     * ```typescript
-     * // src/main.ts
-     * const socket = process.env.NVIM;
-     * if (!socket) throw Error("socket missing");
-     *
-     * const nvim = await attach({ socket });
-     * ```
-     */
-    socket: string;
-
-    /**
-     * RPC client info
-     * This is sent to neovim on-connection-open by calling `nvim_set_client_info()`
-     * @see {@link https://neovim.io/doc/user/api.html#nvim_set_client_info()}
-     */
-    client: Client;
-
-    /**
-     * @remarks
-     * bunvim internally logs with `logger.debug()` and `logger.error()`
-     * Set logLevel higher than `debug` to hide bunvim's internal logs
-     *
-     * Levels from highest to lowest priority
-     * - error
-     * - warn
-     * - info
-     * - http
-     * - verbose
-     * - debug
-     * - silly
-     *
-     * @default "debug"
-     */
-    logLevel?: LogLevel | undefined;
-}): Promise<Nvim<NMap, RMap>> {
+}) => {
     const logger = createLogger(client, logLevel);
     const messageOutQueue: RPCMessage[] = [];
     const notificationHandlers = new Map<string, NotificationHandler>();
@@ -105,7 +50,7 @@ export async function attach<
             data(_, data) {
                 unpackrStream.write(data);
             },
-            error(_socket, error) {
+            error(_, error) {
                 logger?.error("socket error", error);
             },
             end() {
@@ -205,4 +150,4 @@ export async function attach<
         },
         logger: logger,
     };
-}
+};

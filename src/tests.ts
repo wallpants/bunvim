@@ -8,7 +8,7 @@ const nvim = await attach({
     client: { name: "bunvim" },
     logging: {
         level: "debug",
-        file: "./test-file.logs",
+        // file: "./test-file.logs",
     },
 });
 
@@ -22,7 +22,7 @@ const nvim = await attach({
 // `,
 //     ["gual"],
 // ]);
-await nvim.call("nvim_get_current_buf", []);
-await nvim.call("nvim_get_current_win", []);
-await nvim.call("nvim_get_current_tabpage", []);
+await nvim.call("nvim_get_api_info", []);
+// await nvim.call("nvim_get_current_win", []);
+// await nvim.call("nvim_get_current_tabpage", []);
 nvim.detach();

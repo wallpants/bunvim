@@ -1,13 +1,21 @@
 import type winston from "winston";
-import { type ApiInfo } from "./generated-api-info.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Any = any;
 export type Awaitable<T> = T | Promise<T>;
 
+type GeneratedApiInfo = {
+    functions: Record<string, { parameters: unknown; return_type: unknown }>;
+    ui_events: Record<string, { parameters: unknown }>;
+    ui_options: string[];
+    error_types: Record<string, { id: number }>;
+    types: Record<string, { id: number; prefix: string }>;
+};
+
 export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
 
 export type Attach<
+    ApiInfo extends GeneratedApiInfo,
     NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
     RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 > = (config: {
@@ -61,7 +69,7 @@ export type Attach<
         level: LogLevel;
         file?: string | undefined;
     };
-}) => Promise<Nvim<NMap, RMap>>;
+}) => Promise<Nvim<ApiInfo, NMap, RMap>>;
 
 export type Client = {
     /**
@@ -111,6 +119,7 @@ export type RequestHandler<Args = Any> = (args: Args) => Awaitable<RequestRespon
 export type NotificationHandler<Args = Any> = (args: Args, notification: string) => Awaitable<void>;
 
 export type Nvim<
+    ApiInfo extends GeneratedApiInfo,
     NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
     RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
 > = {
@@ -129,10 +138,10 @@ export type Nvim<
      * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
      * ```
      */
-    call<M extends keyof ApiInfo>(
+    call<M extends keyof ApiInfo["functions"]>(
         func: M,
-        args: ApiInfo[M]["parameters"],
-    ): Promise<ApiInfo[M]["returns"]>;
+        args: ApiInfo["functions"][M]["parameters"],
+    ): Promise<ApiInfo["functions"][M]["return_type"]>;
     /**
      * Register/Update a handler for rpc notifications
      *

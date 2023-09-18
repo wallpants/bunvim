@@ -1,4 +1,5 @@
 import { program } from "commander";
+import {} from "winston";
 import { version } from "../../package.json";
 
 program.name("bunvim").description("CLI to work the neovim's bun client").version(version);
@@ -6,12 +7,13 @@ program.name("bunvim").description("CLI to work the neovim's bun client").versio
 program
     .command("logs")
     .description("print logs")
-    .option("-o, --out <path>", "Path to log file", "/tmp/bunvim.log")
-    .option("-l, --level <level>", "Log level", "debug")
-    .action(({ out, level }) => {
-        Bun.spawn({ cmd: ["tail", "-F", "-n", "0", out], stdin: null, stdout: "inherit" });
-        console.log("out: ", out);
-        console.log("level: ", level);
+    .argument("<client name>", "Client name you specify in your attach call")
+    .action((name) => {
+        Bun.spawn({
+            cmd: ["tail", "-F", "-n", "0", `/tmp/${name}.bunvim.logs`],
+            stdin: null,
+            stdout: "inherit",
+        });
     });
 
 program.parse();

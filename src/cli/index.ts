@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { InvalidOptionArgumentError, program } from "commander";
 import { unpack } from "msgpackr";
 import { existsSync, statSync } from "node:fs";

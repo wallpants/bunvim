@@ -1,12 +1,12 @@
 {
   "name": "bunvim",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "author": "Gual Casas",
   "repository": {
     "url": "git+https://github.com/gualcasas/bunvim.git"
   },
   "bin": {
-    "bunvim": "./src/cli/index.ts"
+    "bunvim": "./bin/cli/index.js"
   },
   "exports": {
     "types": "./src/index.ts",
@@ -17,7 +17,7 @@
     "clean": "rm -rf node_modules",
     "format": "prettier src -w",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
-    "logs": "tail -F -n 0 \"$BUNVIM_LOG_FILE\""
+    "build:cli": "bun build src/cli/index.ts --outdir bin/cli --target bun"
   },
   "dependencies": {
     "commander": "^11.0.0",

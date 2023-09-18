@@ -2,8 +2,11 @@ import { EventEmitter } from "node:events";
 import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
-    type Attach,
+    type AttachParams,
+    type BaseApiInfo,
     type NotificationHandler,
+    type Nvim,
+    type RPC,
     type RPCMessage,
     type RPCRequest,
     type RPCResponse,
@@ -28,7 +31,10 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
     });
 });
 
-export const attach: Attach = async ({ socket, client, logging }) => {
+export async function attach<
+    ApiInfo extends BaseApiInfo = BaseApiInfo,
+    CustomRPC extends RPC = RPC,
+>({ socket, client, logging }: AttachParams): Promise<Nvim<ApiInfo, CustomRPC>> {
     const logger = createLogger(client, logging);
     const messageOutQueue: RPCMessage[] = [];
     const notificationHandlers = new Map<string, NotificationHandler>();
@@ -145,4 +151,4 @@ export const attach: Attach = async ({ socket, client, logging }) => {
         },
         logger: logger,
     };
-};
+}

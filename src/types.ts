@@ -4,9 +4,9 @@ import type winston from "winston";
 export type Any = any;
 export type Awaitable<T> = T | Promise<T>;
 
-type GeneratedApiInfo = {
-    functions: Record<string, { parameters: unknown; return_type: unknown }>;
-    ui_events: Record<string, { parameters: unknown }>;
+export type BaseApiInfo = {
+    functions: Record<string, { parameters: unknown[]; return_type: unknown }>;
+    ui_events: Record<string, { parameters: unknown[] }>;
     ui_options: string[];
     error_types: Record<string, { id: number }>;
     types: Record<string, { id: number; prefix: string }>;
@@ -14,11 +14,7 @@ type GeneratedApiInfo = {
 
 export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
 
-export type Attach<
-    ApiInfo extends GeneratedApiInfo,
-    NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
-    RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
-> = (config: {
+export type AttachParams = {
     /**
      * neovim socket
      *
@@ -69,7 +65,7 @@ export type Attach<
         level: LogLevel;
         file?: string | undefined;
     };
-}) => Promise<Nvim<ApiInfo, NMap, RMap>>;
+};
 
 export type Client = {
     /**
@@ -118,11 +114,12 @@ export type RPCMessage = RPCRequest | RPCNotification | RPCResponse;
 export type RequestHandler<Args = Any> = (args: Args) => Awaitable<RequestResponse>;
 export type NotificationHandler<Args = Any> = (args: Args, notification: string) => Awaitable<void>;
 
-export type Nvim<
-    ApiInfo extends GeneratedApiInfo,
-    NMap extends Record<string, unknown[]> = Record<string, unknown[]>,
-    RMap extends Record<string, unknown[]> = Record<string, unknown[]>,
-> = {
+export type RPC = {
+    notifications: Record<string, unknown[]>;
+    requests: Record<string, unknown[]>;
+};
+
+export type Nvim<ApiInfo extends BaseApiInfo, CustomRPC extends RPC> = {
     /**
      * Call a neovim function
      * @see {@link https://neovim.io/doc/user/api.html}
@@ -157,9 +154,9 @@ export type Nvim<
      * });
      * ```
      */
-    onNotification<N extends keyof NMap>(
+    onNotification<N extends keyof CustomRPC["notifications"]>(
         notification: N,
-        callback: NotificationHandler<NMap[N]>,
+        callback: NotificationHandler<CustomRPC["notifications"][N]>,
     ): void;
     /**
      * Register/Update a handler for rpc requests
@@ -177,7 +174,10 @@ export type Nvim<
      * });
      * ```
      */
-    onRequest<M extends keyof RMap>(method: M, callback: RequestHandler<RMap[M]>): void;
+    onRequest<M extends keyof CustomRPC["requests"]>(
+        method: M,
+        callback: RequestHandler<CustomRPC["requests"][M]>,
+    ): void;
     /**
      * Close socket connection to neovim
      */

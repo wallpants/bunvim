@@ -1,7 +1,7 @@
 import { attach } from "./index.ts";
 import { type NeovimApi } from "./neovim.types.ts";
 
-const SOCKET = process.env.NVIM;
+const SOCKET = process.env["NVIM"];
 if (!SOCKET) throw Error("socket missing");
 
 const nvim = await attach<NeovimApi>({

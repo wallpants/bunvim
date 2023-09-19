@@ -1,6 +1,6 @@
 {
   "name": "bunvim",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "author": "Gual Casas",
   "repository": {
     "url": "git+https://github.com/gualcasas/bunvim.git"
@@ -16,7 +16,7 @@
     "vi": "nvim",
     "clean": "rm -rf node_modules",
     "format": "prettier src -w",
-    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0"
+    "lint": "tsc && eslint . --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "commander": "^11.0.0",

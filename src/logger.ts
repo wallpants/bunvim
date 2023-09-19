@@ -18,7 +18,7 @@ export function createLogger(
                 format: winston.format.combine(
                     winston.format.colorize(),
                     winston.format.timestamp({ format: "HH:mm:ss.SSS" }),
-                    winston.format.printf((info) => `\n${info.level} ${info.timestamp}`),
+                    winston.format.printf((info) => `\n${info.level} ${info["timestamp"]}`),
                 ),
             }),
             new winston.transports.File({

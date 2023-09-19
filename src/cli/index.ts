@@ -66,4 +66,9 @@ program
         await Bun.write(resolved, content);
     });
 
-program.parse();
+try {
+    program.exitOverride();
+    await program.parseAsync();
+} catch (e) {
+    // noop: silence duplicate bun errors
+}

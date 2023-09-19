@@ -42,7 +42,7 @@ export function generateTypescriptContent(neovimApi: NeovimApi) {
 
 import { type EventsMap } from "bunvim";
 
-export type NeovimApiInfo<
+export type NeovimApi<
   Notifications extends EventsMap = EventsMap,
   Requests extends EventsMap = EventsMap,
 > = {\n`;

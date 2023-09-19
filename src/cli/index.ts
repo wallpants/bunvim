@@ -7,11 +7,11 @@ import { version } from "../../package.json";
 import { generateTypescriptContent } from "./generate.ts";
 import { type NeovimApi } from "./types.ts";
 
-program.name("bunvim").description("CLI to work the neovim's bun client").version(version);
+program.name("bunvim").description("CLI to work with neovim's bun client").version(version);
 
 program
     .command("logs")
-    .description("Print bunvim client logs.")
+    .description("print bunvim client logs")
     .argument("<client_name>", "Client name you specify in your attach call.")
     .action((name) => {
         Bun.spawn({
@@ -40,11 +40,16 @@ function validateOutDir(value: string) {
 
 program
     .command("types")
-    .description("Generate api types using your local neovim.")
-    .option("-o, --outDir <path>", "Path to dir where types file will be created.", validateOutDir)
+    .description("generate api types using your local neovim")
+    .option(
+        "-o, --outDir <path>",
+        "Path to dir where types file will be created.",
+        validateOutDir,
+        ".",
+    )
     .option(
         "-l, --level <number>",
-        "Include info up to specified api level (inclusive). Leave unset to include all. Deprecated are excluded by default.",
+        "Include info up to specified api level (inclusive). Leave unset to include all. Deprecated items are excluded by default.",
         validateLevel,
     )
     .action(async ({ level, outDir }: { level?: number; outDir?: string }) => {

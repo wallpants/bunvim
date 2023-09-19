@@ -12,7 +12,7 @@ program.name("bunvim").description("CLI to work the neovim's bun client").versio
 program
     .command("logs")
     .description("Print bunvim client logs.")
-    .argument("<client name>", "Client name you specify in your attach call.")
+    .argument("<client_name>", "Client name you specify in your attach call.")
     .action((name) => {
         Bun.spawn({
             cmd: ["tail", "-F", "-n", "0", `/tmp/${name}.bunvim.logs`],

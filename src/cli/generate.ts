@@ -1,4 +1,4 @@
-import { type NeovimApi, type Params } from "./types.ts";
+import { type ApiMeta, type Params } from "./types.ts";
 
 // TODO: make this dynamic
 function toTypescriptType(type: string) {
@@ -33,7 +33,7 @@ function parseParameters(params: Params) {
     return params.map((param) => `${param[1]}: ${toTypescriptType(param[0])}`).join(", ");
 }
 
-export function generateTypescriptContent(neovimApi: NeovimApi) {
+export function generateTypescriptContent(neovimApi: ApiMeta) {
     let output = `/* eslint @typescript-eslint/no-invalid-void-type: 0 */
 
 /*

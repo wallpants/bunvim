@@ -1,42 +1,60 @@
-import { attach, type BaseApiInfo } from "./index.ts";
+import { attach } from "./index.ts";
+import { type NeovimApi } from "./neovim.types.ts";
 
 const SOCKET = process.env.NVIM;
 if (!SOCKET) throw Error("socket missing");
 
-type NofificationsMap = {
-    something: [buff: number, name: string, height: number];
-};
-
-type RequestsMap = {
-    something: [string, number];
-};
-
-type MyNvim = BaseApiInfo<NofificationsMap, RequestsMap>;
-
-const nvim = await attach<MyNvim>({
+const nvim = await attach<NeovimApi>({
     socket: SOCKET,
     client: { name: "bunvim" },
+    logging: { level: "debug" },
 });
 
-nvim.onNotification("something", (arg) => {
-    console.log("arg: ", arg);
+await nvim.call("nvim_subscribe", ["something"]);
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 1");
+    return 1;
 });
 
-nvim.onRequest("something", (arg) => {
-    return arg;
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 2");
+    return false;
 });
 
-// await nvim.call("nvim_exec_lua", [
-//     `
-//     local function my_func(name)
-//         vim.print("hello " .. name)
-//     end
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 3");
+    return "string";
+});
 
-//     return my_func(...)
-// `,
-//     ["gual"],
-// ]);
-await nvim.call("nvim_get_api_info", []);
-// await nvim.call("nvim_get_current_win", []);
-// await nvim.call("nvim_get_current_tabpage", []);
-nvim.detach();
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 4");
+    return true;
+});
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 5");
+    return;
+});
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 6");
+    return true;
+});
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 7");
+});
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 8");
+});
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 9");
+    return true;
+});
+
+nvim.onNotification("something", () => {
+    nvim.logger?.verbose("something 10");
+});

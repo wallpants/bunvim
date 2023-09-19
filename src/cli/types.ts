@@ -1,6 +1,6 @@
 export type Params = [type: string, name: string][];
 
-export type NeovimApi = {
+export type ApiMeta = {
     version: {
         major: number;
         minor: number;

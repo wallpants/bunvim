@@ -5,7 +5,7 @@ import { existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { version } from "../../package.json";
 import { generateTypescriptContent } from "./generate.ts";
-import { type NeovimApi } from "./types.ts";
+import { type ApiMeta } from "./types.ts";
 
 program.name("bunvim").description("CLI to work with neovim's bun client").version(version);
 
@@ -54,7 +54,7 @@ program
     )
     .action(async ({ level, outDir }: { level?: number; outDir?: string }) => {
         const process = Bun.spawnSync({ cmd: ["nvim", "--api-info"] });
-        const neovimApi = unpack(process.stdout) as NeovimApi;
+        const neovimApi = unpack(process.stdout) as ApiMeta;
 
         neovimApi.functions = neovimApi.functions.filter((fn) => {
             if (fn.deprecated_since !== undefined) return false;

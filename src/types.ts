@@ -144,12 +144,14 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
      *
      * nvim.onNotification("my_rpc_notification", (args) => {
      *   nvim.logger?.info(args);
+     *   // return true to remove listener
+     *   return true;
      * });
      * ```
      */
     onNotification<N extends keyof ApiInfo["notifications"]>(
         notification: N,
-        callback: EventHandler<ApiInfo["notifications"][N], void>,
+        callback: EventHandler<ApiInfo["notifications"][N], unknown>,
     ): void;
     /**
      * Register/Update a handler for rpc requests

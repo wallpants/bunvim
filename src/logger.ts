@@ -1,8 +1,8 @@
 import { resolve } from "node:path";
 import winston from "winston";
-import { MessageType, type Client, type RPCMessage } from "./types.ts";
+import { MessageType, type Client, type LogLevel, type RPCMessage } from "./types.ts";
 
-export function createLogger(client: Client, logging?: { level: string; file?: string }) {
+export function createLogger(client: Client, logging?: { level: LogLevel; file?: string }) {
     if (!logging) return;
 
     const defaultFilePath = `/tmp/${client.name}.bunvim.logs`;

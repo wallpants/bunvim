@@ -7,6 +7,7 @@ import {
     type EventHandler,
     type Nvim,
     type RPCMessage,
+    type RPCNotification,
     type RPCRequest,
     type RPCResponse,
 } from "./types.ts";
@@ -37,12 +38,13 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
     const logger = createLogger(client, logging);
     const messageOutQueue: RPCMessage[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const notificationHandlers = new Map<string, EventHandler<any, void>>();
+    const notificationHandlers = new Map<string, Record<string, EventHandler<any, unknown>>>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestHandlers = new Map<string, EventHandler<any, unknown>>();
     const emitter = new EventEmitter({ captureRejections: true });
 
     let lastReqId = 0;
+    let handlerId = 0;
     let awaitingResponse = false;
 
     const nvimSocket = await Bun.connect({
@@ -78,14 +80,26 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
         nvimSocket.write(packr.pack(message));
     }
 
+    async function runNotificationHandlers(message: RPCNotification) {
+        // message[1] notification name
+        // message[2] args
+        const handlers = notificationHandlers.get(message[1]);
+        if (!handlers) return;
+
+        await Promise.all(
+            Object.entries(handlers).map(async ([id, handler]) => {
+                const result = await handler(message[2]);
+                // eslint-disable-next-line
+                if (result === true) delete handlers[id];
+            }),
+        );
+    }
+
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
             logger?.debug(prettyRPCMessage(message, "in"));
             if (message[0] === MessageType.NOTIFY) {
-                // message[1] notification name
-                // message[2] args
-                const notificationHandler = notificationHandlers.get(message[1]);
-                void notificationHandler?.(message[2]);
+                void runNotificationHandlers(message);
             }
 
             if (message[0] === MessageType.RESPONSE) {
@@ -152,7 +166,9 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
             });
         },
         onNotification(notification, callback) {
-            notificationHandlers.set(notification as string, callback);
+            const handlers = notificationHandlers.get(notification as string) ?? {};
+            handlers[++handlerId] = callback;
+            notificationHandlers.set(notification as string, handlers);
         },
         onRequest(method, callback) {
             requestHandlers.set(method as string, callback);

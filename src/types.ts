@@ -1,18 +1,48 @@
 import type winston from "winston";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Any = any;
 export type Awaitable<T> = T | Promise<T>;
 
-export type BaseApiInfo = {
+type EventMap = Record<string, unknown[]>;
+
+export type BaseApiInfo<
+    Notifications extends EventMap = EventMap,
+    Requests extends EventMap = EventMap,
+> = {
     functions: Record<string, { parameters: unknown[]; return_type: unknown }>;
     ui_events: Record<string, { parameters: unknown[] }>;
     ui_options: string[];
     error_types: Record<string, { id: number }>;
     types: Record<string, { id: number; prefix: string }>;
+    notifications: Notifications;
+    requests: Requests;
 };
 
 export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
+
+export type Client = {
+    /**
+     * `name` can be used to find channel id on neovim.
+     * It's also used for logging
+     *
+     * ```lua
+     * -- look for channel.client.name in channel list
+     * local chans_list = vim.fn.nvim_list_chans()
+     * ```
+     */
+    name: string;
+    version?: {
+        /** major version (defaults to 0 if not set, for no release yet) */
+        major?: number;
+        /** minor version */
+        minor?: number;
+        /** patch number */
+        patch?: number;
+        /** string describing a prerelease, like "dev" or "beta1" */
+        prerelease?: string;
+        /** hash or similar identifier of commit */
+        commit?: string;
+    };
+};
 
 export type AttachParams = {
     /**
@@ -35,7 +65,7 @@ export type AttachParams = {
      * const socket = process.env.NVIM;
      * if (!socket) throw Error("socket missing");
      *
-     * const nvim = await attach({ socket });
+     * const nvim = await attach({ socket, client: { name: "my_client" } });
      * ```
      */
     socket: string;
@@ -67,59 +97,22 @@ export type AttachParams = {
     };
 };
 
-export type Client = {
-    /**
-     * `name` can be used to find channel id on neovim.
-     * It's also used for logging
-     *
-     * ```lua
-     * -- look for channel.client.name in channel list
-     * local chans_list = vim.fn.nvim_list_chans()
-     * ```
-     */
-    name: string;
-    version?: {
-        /** major version (defaults to 0 if not set, for no release yet) */
-        major?: number;
-        /** minor version */
-        minor?: number;
-        /** patch number */
-        patch?: number;
-        /** string describing a prerelease, like "dev" or "beta1" */
-        prerelease?: string;
-        /** hash or similar identifier of commit */
-        commit?: string;
-    };
-};
-
 export enum MessageType {
     REQUEST = 0,
     RESPONSE = 1,
     NOTIFY = 2,
 }
 
-export type RequestResponse = { error: string | null; success: unknown };
-
 export type RPCRequest = [MessageType.REQUEST, id: number, method: string, args: unknown[]];
 export type RPCNotification = [MessageType.NOTIFY, notification: string, args: unknown[]];
-export type RPCResponse = [
-    MessageType.RESPONSE,
-    id: number,
-    error: RequestResponse["error"],
-    result: RequestResponse["success"],
-];
-
+export type RPCResponse = [MessageType.RESPONSE, id: number, error: string | null, result: unknown];
 export type RPCMessage = RPCRequest | RPCNotification | RPCResponse;
 
-export type RequestHandler<Args = Any> = (args: Args) => Awaitable<RequestResponse>;
-export type NotificationHandler<Args = Any> = (args: Args, notification: string) => Awaitable<void>;
+export type EventHandler<Args, Returns> = (args: Args) => Awaitable<Returns>;
+export type NotificationHandler = EventHandler<unknown[], void>;
+export type RequestHandler = EventHandler<unknown[], unknown>;
 
-export type RPC = {
-    notifications: Record<string, unknown[]>;
-    requests: Record<string, unknown[]>;
-};
-
-export type Nvim<ApiInfo extends BaseApiInfo, CustomRPC extends RPC> = {
+export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
     /**
      * Call a neovim function
      * @see {@link https://neovim.io/doc/user/api.html}
@@ -154,9 +147,9 @@ export type Nvim<ApiInfo extends BaseApiInfo, CustomRPC extends RPC> = {
      * });
      * ```
      */
-    onNotification<N extends keyof CustomRPC["notifications"]>(
+    onNotification<N extends keyof ApiInfo["notifications"]>(
         notification: N,
-        callback: NotificationHandler<CustomRPC["notifications"][N]>,
+        callback: EventHandler<ApiInfo["notifications"][N], void>,
     ): void;
     /**
      * Register/Update a handler for rpc requests
@@ -166,17 +159,21 @@ export type Nvim<ApiInfo extends BaseApiInfo, CustomRPC extends RPC> = {
      *
      * @example
      * ```typescript
-     * import { RequestResponse } from 'bunvim';
-     *
      * nvim.onRequest("my_func", async (args) => {
-     *   const { error, success }: RequestResponse = await asyncFunc(args);
-     *   return { error, success };
+     *   const result = await asyncFunc(args);
+     *
+     *   if (result < 10) {
+     *     // throwing an error sends the error back to neovim
+     *     throw Error("result too low");
+     *   }
+     *
+     *   return result;
      * });
      * ```
      */
-    onRequest<M extends keyof CustomRPC["requests"]>(
+    onRequest<M extends keyof ApiInfo["requests"]>(
         method: M,
-        callback: RequestHandler<CustomRPC["requests"][M]>,
+        callback: EventHandler<ApiInfo["requests"][M], unknown>,
     ): void;
     /**
      * Close socket connection to neovim

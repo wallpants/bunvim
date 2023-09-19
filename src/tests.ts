@@ -1,15 +1,29 @@
-import { attach } from "./index.ts";
+import { attach, type BaseApiInfo } from "./index.ts";
 
 const SOCKET = process.env.NVIM;
 if (!SOCKET) throw Error("socket missing");
 
-const nvim = await attach({
+type NofificationsMap = {
+    something: [buff: number, name: string, height: number];
+};
+
+type RequestsMap = {
+    something: [string, number];
+};
+
+type MyNvim = BaseApiInfo<NofificationsMap, RequestsMap>;
+
+const nvim = await attach<MyNvim>({
     socket: SOCKET,
     client: { name: "bunvim" },
-    logging: {
-        level: "debug",
-        // file: "./test-file.logs",
-    },
+});
+
+nvim.onNotification("something", (arg) => {
+    console.log("arg: ", arg);
+});
+
+nvim.onRequest("something", (arg) => {
+    return arg;
 });
 
 // await nvim.call("nvim_exec_lua", [

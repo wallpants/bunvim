@@ -4,13 +4,11 @@ import {
     MessageType,
     type AttachParams,
     type BaseApiInfo,
-    type NotificationHandler,
+    type EventHandler,
     type Nvim,
-    type RPC,
     type RPCMessage,
     type RPCRequest,
     type RPCResponse,
-    type RequestHandler,
 } from "./types.ts";
 // eslint-disable-next-line import/named
 import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
@@ -31,14 +29,17 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
     });
 });
 
-export async function attach<
-    ApiInfo extends BaseApiInfo = BaseApiInfo,
-    CustomRPC extends RPC = RPC,
->({ socket, client, logging }: AttachParams): Promise<Nvim<ApiInfo, CustomRPC>> {
+export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
+    socket,
+    client,
+    logging,
+}: AttachParams): Promise<Nvim<ApiInfo>> {
     const logger = createLogger(client, logging);
     const messageOutQueue: RPCMessage[] = [];
-    const notificationHandlers = new Map<string, NotificationHandler>();
-    const requestHandlers = new Map<string, RequestHandler>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const notificationHandlers = new Map<string, EventHandler<any, void>>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const requestHandlers = new Map<string, EventHandler<any, unknown>>();
     const emitter = new EventEmitter({ captureRejections: true });
 
     let lastReqId = 0;
@@ -84,7 +85,7 @@ export async function attach<
                 // message[1] notification name
                 // message[2] args
                 const notificationHandler = notificationHandlers.get(message[1]);
-                void notificationHandler?.(message[2], message[1]);
+                void notificationHandler?.(message[2]);
             }
 
             if (message[0] === MessageType.RESPONSE) {
@@ -110,14 +111,24 @@ export async function attach<
                     ];
                     messageOutQueue.unshift(notFound);
                 } else {
-                    const { error, success } = await handler(message[3]);
-                    const response: RPCResponse = [
-                        MessageType.RESPONSE,
-                        message[1],
-                        error,
-                        success,
-                    ];
-                    messageOutQueue.unshift(response);
+                    try {
+                        const result = await handler(message[3]);
+                        const response: RPCResponse = [
+                            MessageType.RESPONSE,
+                            message[1],
+                            null,
+                            result,
+                        ];
+                        messageOutQueue.unshift(response);
+                    } catch (err) {
+                        const response: RPCResponse = [
+                            MessageType.RESPONSE,
+                            message[1],
+                            String(err),
+                            null,
+                        ];
+                        messageOutQueue.unshift(response);
+                    }
                 }
             }
 

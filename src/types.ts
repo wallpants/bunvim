@@ -2,11 +2,11 @@ import type winston from "winston";
 
 export type Awaitable<T> = T | Promise<T>;
 
-type EventMap = Record<string, unknown[]>;
+export type EventsMap = Record<string, unknown[]>;
 
 export type BaseApiInfo<
-    Notifications extends EventMap = EventMap,
-    Requests extends EventMap = EventMap,
+    Notifications extends EventsMap = EventsMap,
+    Requests extends EventsMap = EventsMap,
 > = {
     functions: Record<string, { parameters: unknown[]; return_type: unknown }>;
     ui_events: Record<string, { parameters: unknown[] }>;

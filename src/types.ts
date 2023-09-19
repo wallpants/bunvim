@@ -92,7 +92,7 @@ export type AttachParams = {
          * - debug
          * - silly
          */
-        level: LogLevel;
+        level?: LogLevel | undefined;
         file?: string | undefined;
     };
 };

@@ -4,9 +4,9 @@ import { MessageType, type Client, type LogLevel, type RPCMessage } from "./type
 
 export function createLogger(
     client: Client,
-    logging?: { level: LogLevel; file?: string | undefined },
+    logging?: { level?: LogLevel | undefined; file?: string | undefined },
 ) {
-    if (!logging) return;
+    if (!logging?.level) return;
 
     const defaultFilePath = `/tmp/${client.name}.bunvim.logs`;
 

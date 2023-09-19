@@ -19,7 +19,8 @@ program
             stdin: null,
             stdout: "inherit",
         });
-    });
+    })
+    .exitOverride(() => process.exit(0));
 
 function validateLevel(value: string) {
     const parsedInt = parseInt(value, 10);
@@ -64,11 +65,7 @@ program
 
         console.log(`\nGenerating types at:\n* ${resolved}\n`);
         await Bun.write(resolved, content);
-    });
+    })
+    .exitOverride(() => process.exit(0));
 
-try {
-    program.exitOverride();
-    await program.parseAsync();
-} catch (e) {
-    // noop: silence duplicate bun errors
-}
+await program.exitOverride(() => process.exit(0)).parseAsync();

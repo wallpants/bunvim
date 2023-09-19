@@ -55,7 +55,7 @@ export function prettyRPCMessage(message: RPCMessage, direction: "out" | "in") {
 
     if (message[0] === MessageType.REQUEST) {
         return {
-            [`${prefix}_REQUEST`]: {
+            [`${prefix}_RPC_REQUEST`]: {
                 reqId: message[1],
                 method: message[2],
                 params: message[3],
@@ -65,7 +65,7 @@ export function prettyRPCMessage(message: RPCMessage, direction: "out" | "in") {
 
     if (message[0] === MessageType.RESPONSE) {
         return {
-            [`${prefix}_RESPONSE`]: {
+            [`${prefix}_RPC_RESPONSE`]: {
                 reqId: message[1],
                 error: message[2],
                 result: message[3],
@@ -75,7 +75,7 @@ export function prettyRPCMessage(message: RPCMessage, direction: "out" | "in") {
 
     // if (message[0] === MessageType.NOTIFY)
     return {
-        [`${prefix}_NOTIFICATION`]: {
+        [`${prefix}_RPC_NOTIFICATION`]: {
             event: message[1],
             args: message[2],
         },

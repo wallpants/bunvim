@@ -18,16 +18,12 @@ const packr = new Packr({ useRecords: false });
 const unpackrStream = new UnpackrStream({ useRecords: false });
 
 [0, 1, 2].forEach((type) => {
+    // https://neovim.io/doc/user/api.html#api-definitions
     // decode Buffer, Window, and Tabpage as numbers
-    // Buffer: { id: 0, prefix: 'nvim_buf_' },
-    // Window: { id: 1, prefix: 'nvim_win_' },
-    // Tabpage: { id: 2, prefix: 'nvim_tabpage_' }
-    addExtension({
-        type,
-        unpack(buffer) {
-            return unpack(buffer) as number;
-        },
-    });
+    // Buffer   id: 0    prefix: nvim_buf_
+    // Window   id: 1    prefix: nvim_win_
+    // Tabpage  id: 2    prefix: nvim_tabpage_
+    addExtension({ type, unpack: (buffer) => unpack(buffer) as number });
 });
 
 export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
@@ -53,6 +49,9 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
         socket: {
             binaryType: "uint8array",
             data(_, data) {
+                // Sometimes RPC messages are split into multiple socket messages.
+                // `unpackrStream` handles collecting all socket messages if the RPC message
+                // is split and decoding it.
                 unpackrStream.write(data);
             },
             error(_, error) {
@@ -67,7 +66,9 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
         },
     });
 
-    function processMessageQueue() {
+    function processMessageOutQueue() {
+        // All writing to neovim happens through this function.
+        // Outgoing RPC messages are added to the `messageOutQueue` and sent ASAP
         if (!messageOutQueue.length || awaitingResponse) return;
         awaitingResponse = true;
 
@@ -90,6 +91,8 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
         await Promise.all(
             Object.entries(handlers).map(async ([id, handler]) => {
                 const result = await handler(message[2]);
+                // remove notification handler if it returns specifically `true`
+                // other truthy values won't trigger the removal
                 // eslint-disable-next-line
                 if (result === true) delete handlers[id];
             }),
@@ -100,6 +103,8 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
         (async () => {
             logger?.debug(prettyRPCMessage(message, "in"));
             if (message[0] === MessageType.NOTIFY) {
+                // asynchronously run notification handlers.
+                // RPCNotifications don't need a response
                 void runNotificationHandlers(message);
             }
 
@@ -117,6 +122,8 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
                 // message[3] args
                 const handler = requestHandlers.get(message[2]);
 
+                // RPCRequests block neovim until a response is received.
+                // RPCResponse is added to beginning of queue to be sent ASAP.
                 if (!handler) {
                     const notFound: RPCResponse = [
                         MessageType.RESPONSE,
@@ -147,7 +154,8 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
                 }
             }
 
-            processMessageQueue();
+            // Continue processing queue
+            processMessageOutQueue();
         })().catch((err) => logger?.error("unpackrStream error", err));
     });
 
@@ -157,13 +165,16 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
             const request: RPCRequest = [MessageType.REQUEST, reqId, func as string, args];
 
             return new Promise((resolve, reject) => {
+                // Register response listener before adding request to queue to avoid
+                // response coming in before listener was set up.
                 emitter.once(`response-${reqId}`, (error, result) => {
                     if (error) reject(error);
                     resolve(result as unknown);
                 });
 
                 messageOutQueue.push(request);
-                processMessageQueue();
+                // Start processing queue if we're not already
+                processMessageOutQueue();
             });
         },
         onNotification(notification, callback) {
@@ -175,6 +186,7 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
             requestHandlers.set(method as string, callback);
         },
         detach() {
+            // TODO(gualcasas): make this async and await for detach confirmation
             nvimSocket.end();
         },
         logger: logger,

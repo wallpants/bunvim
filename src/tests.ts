@@ -10,5 +10,6 @@ const nvim = await attach<NeovimApi>({
     logging: { level: "debug" },
 });
 
-const chanId = await nvim.channelId();
-nvim.logger?.info("chanId", { chanId });
+await nvim.call("nvim_ui_attach", [9999, 9999, {}]);
+
+// nvim.detach();

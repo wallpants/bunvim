@@ -114,6 +114,7 @@ export type RequestHandler = EventHandler<unknown[], unknown>;
 
 export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
     /**
+     *
      * Call a neovim function
      * @see {@link https://neovim.io/doc/user/api.html}
      *
@@ -133,6 +134,7 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
         args: ApiInfo["functions"][M]["parameters"],
     ): Promise<ApiInfo["functions"][M]["return_type"]>;
     /**
+     *
      * Register/Update a handler for rpc notifications
      *
      * @param notification - event name
@@ -154,7 +156,12 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
         callback: EventHandler<ApiInfo["notifications"][N], unknown>,
     ): void;
     /**
-     * Register/Update a handler for rpc requests
+     *
+     * Register/Update a handler for rpc requests.
+     *
+     * There can only be one handler per method.
+     * This means calling `nvim.onRequest("my_func", () => {})` will override
+     * any previously registered handlers under `"my_func"`.
      *
      * @param method - method name
      * @param callback - request handler
@@ -178,19 +185,22 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
         callback: EventHandler<ApiInfo["requests"][M], unknown>,
     ): void;
     /**
-     * Close socket connection to neovim
+     *
+     * Close socket connection to neovim.
      */
     detach(): void;
     /**
-     * Reference to winston logger. `undefined` if no `logFile` provided
+     *
+     * Reference to winston logger. `undefined` if no `logging` provided
      * to `attach`
      */
     logger: winston.Logger | undefined;
     /**
-     * Calls `nvim_get_api_info` on first call, which includes `channelId` in its response
+     *
+     * Calls `nvim_get_api_info` on first call, which includes `channelId` in its response,
      * and returns it.
      *
-     * Subsequent calls to channelId() return `memoized` value
+     * Subsequent calls to channelId() return `memoized` value.
      *
      * @returns RPC channel
      */

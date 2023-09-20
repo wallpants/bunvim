@@ -186,4 +186,13 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
      * to `attach`
      */
     logger: winston.Logger | undefined;
+    /**
+     * Calls `nvim_get_api_info` on first call, which includes `channelId` in its response
+     * and returns it.
+     *
+     * Subsequent calls to channelId() return `memoized` value
+     *
+     * @returns RPC channel
+     */
+    channelId(): Promise<number>;
 };

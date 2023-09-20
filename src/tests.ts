@@ -10,51 +10,5 @@ const nvim = await attach<NeovimApi>({
     logging: { level: "debug" },
 });
 
-await nvim.call("nvim_subscribe", ["something"]);
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 1");
-    return 1;
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 2");
-    return false;
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 3");
-    return "string";
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 4");
-    return true;
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 5");
-    return;
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 6");
-    return true;
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 7");
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 8");
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 9");
-    return true;
-});
-
-nvim.onNotification("something", () => {
-    nvim.logger?.verbose("something 10");
-});
+const chanId = await nvim.channelId();
+nvim.logger?.info("chanId", { chanId });

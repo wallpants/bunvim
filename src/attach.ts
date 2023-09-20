@@ -46,6 +46,7 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
     let lastReqId = 0;
     let handlerId = 0;
     let awaitingResponse = false;
+    let channelId: number | null = null;
 
     const nvimSocket = await Bun.connect({
         unix: socket,
@@ -177,5 +178,11 @@ export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
             nvimSocket.end();
         },
         logger: logger,
+        async channelId() {
+            if (channelId !== null) return channelId;
+            const [chanId] = (await (await this).call("nvim_get_api_info", [])) as [number];
+            channelId = chanId;
+            return channelId;
+        },
     };
 }

@@ -18,12 +18,16 @@ const nvim = await attach<MyEvents>({
     logging: { level: "debug" },
 });
 
-// await nvim.call("nvim_ui_attach", [9999, 9999, {}]);
-await nvim.call("nvim_get_current_buf", []);
+await nvim.call("nvim_ui_attach", [500, 500, {}]);
 
-nvim.onNotification("some-notification", ([name, id]) => {
-    console.log("name: ", name);
-    console.log("id: ", id);
+nvim.onNotification("redraw", (events) => {
+    events.forEach(([event, args]) => {
+        if (event === "scroll") {
+            // TODO(gualcasas): args[0] is not properly inferred
+            const val = args[0];
+            console.log("val: ", val);
+        }
+    });
 });
 
-// nvim.detach();
+nvim.detach();

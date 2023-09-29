@@ -6,8 +6,8 @@ export type Awaitable<T> = T | Promise<T>;
 export type EventsMap = Record<string, unknown[]>;
 
 export type CustomEvents = {
-    notifications?: EventsMap;
-    requests?: EventsMap;
+    notifications: EventsMap;
+    requests: EventsMap;
 };
 
 export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
@@ -105,6 +105,15 @@ export type EventHandler<Args, Returns> = (args: Args) => Awaitable<Returns>;
 export type NotificationHandler = EventHandler<unknown[], void>;
 export type RequestHandler = EventHandler<unknown[], unknown>;
 
+type UIEvent<E extends keyof NeovimApi["ui_events"] = keyof NeovimApi["ui_events"]> = [
+    event: E,
+    args: NeovimApi["ui_events"][E]["parameters"],
+];
+
+type UINotifications = {
+    redraw: UIEvent[];
+};
+
 export type Nvim<ApiInfo extends CustomEvents = CustomEvents> = {
     /**
      *
@@ -144,9 +153,9 @@ export type Nvim<ApiInfo extends CustomEvents = CustomEvents> = {
      * });
      * ```
      */
-    onNotification<N extends keyof (ApiInfo["notifications"] & EventsMap)>(
+    onNotification<N extends keyof (ApiInfo["notifications"] & UINotifications)>(
         notification: N,
-        callback: EventHandler<(ApiInfo["notifications"] & EventsMap)[N], unknown>,
+        callback: EventHandler<(ApiInfo["notifications"] & UINotifications)[N], unknown>,
     ): void;
     /**
      *
@@ -173,9 +182,9 @@ export type Nvim<ApiInfo extends CustomEvents = CustomEvents> = {
      * });
      * ```
      */
-    onRequest<M extends keyof (ApiInfo["requests"] & EventsMap)>(
+    onRequest<M extends keyof ApiInfo["requests"]>(
         method: M,
-        callback: EventHandler<(ApiInfo["requests"] & EventsMap)[M], unknown>,
+        callback: EventHandler<ApiInfo["requests"][M], unknown>,
     ): void;
     /**
      *

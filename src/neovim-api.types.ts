@@ -2,6 +2,19 @@
 
 import { type EventsMap } from "./types.ts";
 
+type ui_options = [
+    "rgb",
+    "ext_cmdline",
+    "ext_popupmenu",
+    "ext_tabline",
+    "ext_wildmenu",
+    "ext_messages",
+    "ext_linegrid",
+    "ext_multigrid",
+    "ext_hlstate",
+    "ext_termcolors",
+];
+
 export type NeovimApi<
     Notifications extends EventsMap = EventsMap,
     Requests extends EventsMap = EventsMap,
@@ -332,7 +345,11 @@ export type NeovimApi<
             return_type: boolean;
         };
         nvim_ui_attach: {
-            parameters: [width: number, height: number, options: Record<string, unknown>];
+            parameters: [
+                width: number,
+                height: number,
+                options: Partial<Record<ui_options[number], unknown>>,
+            ];
             return_type: void;
         };
         nvim_ui_set_focus: {
@@ -1027,19 +1044,6 @@ export type NeovimApi<
         Window: { id: 1; prefix: "nvim_win_" };
         Tabpage: { id: 2; prefix: "nvim_tabpage_" };
     };
-
-    ui_options: [
-        "rgb",
-        "ext_cmdline",
-        "ext_popupmenu",
-        "ext_tabline",
-        "ext_wildmenu",
-        "ext_messages",
-        "ext_linegrid",
-        "ext_multigrid",
-        "ext_hlstate",
-        "ext_termcolors",
-    ];
 
     notifications: Notifications;
 

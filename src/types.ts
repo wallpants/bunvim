@@ -5,7 +5,7 @@ export type Awaitable<T> = T | Promise<T>;
 
 export type EventsMap = Record<string, unknown[]>;
 
-export type CustomEvents = {
+export type BaseEvents = {
     notifications: EventsMap;
     requests: EventsMap;
 };
@@ -114,7 +114,7 @@ type UINotifications = {
     redraw: UIEvent[];
 };
 
-export type Nvim<ApiInfo extends CustomEvents = CustomEvents> = {
+export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
     /**
      *
      * Call a neovim function

@@ -3,7 +3,7 @@ import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
     type AttachParams,
-    type BaseApiInfo,
+    type CustomEvents,
     type EventHandler,
     type Nvim,
     type RPCMessage,
@@ -26,7 +26,7 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
     addExtension({ type, unpack: (buffer) => unpack(buffer) as number });
 });
 
-export async function attach<ApiInfo extends BaseApiInfo = BaseApiInfo>({
+export async function attach<ApiInfo extends CustomEvents = CustomEvents>({
     socket,
     client,
     logging,

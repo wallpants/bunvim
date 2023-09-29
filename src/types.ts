@@ -1,20 +1,13 @@
 import type winston from "winston";
+import { type NeovimApi } from "./neovim-api.types.ts";
 
 export type Awaitable<T> = T | Promise<T>;
 
 export type EventsMap = Record<string, unknown[]>;
 
-export type BaseApiInfo<
-    Notifications extends EventsMap = EventsMap,
-    Requests extends EventsMap = EventsMap,
-> = {
-    functions: Record<string, { parameters: unknown[]; return_type: unknown }>;
-    ui_events: Record<string, { parameters: unknown[] }>;
-    ui_options: string[];
-    error_types: Record<string, { id: number }>;
-    types: Record<string, { id: number; prefix: string }>;
-    notifications: Notifications;
-    requests: Requests;
+export type CustomEvents = {
+    notifications?: EventsMap;
+    requests?: EventsMap;
 };
 
 export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" | "silly";
@@ -112,7 +105,7 @@ export type EventHandler<Args, Returns> = (args: Args) => Awaitable<Returns>;
 export type NotificationHandler = EventHandler<unknown[], void>;
 export type RequestHandler = EventHandler<unknown[], unknown>;
 
-export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
+export type Nvim<ApiInfo extends CustomEvents = CustomEvents> = {
     /**
      *
      * Call a neovim function
@@ -129,10 +122,10 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
      * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
      * ```
      */
-    call<M extends keyof ApiInfo["functions"]>(
+    call<M extends keyof NeovimApi["functions"]>(
         func: M,
-        args: ApiInfo["functions"][M]["parameters"],
-    ): Promise<ApiInfo["functions"][M]["return_type"]>;
+        args: NeovimApi["functions"][M]["parameters"],
+    ): Promise<NeovimApi["functions"][M]["return_type"]>;
     /**
      *
      * Register/Update a handler for rpc notifications
@@ -151,9 +144,9 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
      * });
      * ```
      */
-    onNotification<N extends keyof ApiInfo["notifications"]>(
+    onNotification<N extends keyof (ApiInfo["notifications"] & EventsMap)>(
         notification: N,
-        callback: EventHandler<ApiInfo["notifications"][N], unknown>,
+        callback: EventHandler<(ApiInfo["notifications"] & EventsMap)[N], unknown>,
     ): void;
     /**
      *
@@ -180,9 +173,9 @@ export type Nvim<ApiInfo extends BaseApiInfo = BaseApiInfo> = {
      * });
      * ```
      */
-    onRequest<M extends keyof ApiInfo["requests"]>(
+    onRequest<M extends keyof (ApiInfo["requests"] & EventsMap)>(
         method: M,
-        callback: EventHandler<ApiInfo["requests"][M], unknown>,
+        callback: EventHandler<(ApiInfo["requests"] & EventsMap)[M], unknown>,
     ): void;
     /**
      *

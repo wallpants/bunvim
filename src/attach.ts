@@ -82,21 +82,19 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
         nvimSocket.write(packr.pack(message));
     }
 
-    async function runNotificationHandlers(message: RPCNotification) {
+    function runNotificationHandlers(message: RPCNotification) {
         // message[1] notification name
         // message[2] args
         const handlers = notificationHandlers.get(message[1]);
         if (!handlers) return;
 
-        await Promise.all(
-            Object.entries(handlers).map(async ([id, handler]) => {
-                const result = await handler(message[2]);
-                // remove notification handler if it returns specifically `true`
-                // other truthy values won't trigger the removal
-                // eslint-disable-next-line
-                if (result === true) delete handlers[id];
-            }),
-        );
+        Object.entries(handlers).map(async ([id, handler]) => {
+            const result = await handler(message[2]);
+            // remove notification handler if it returns specifically `true`
+            // other truthy values won't trigger the removal
+            // eslint-disable-next-line
+            if (result === true) delete handlers[id];
+        });
     }
 
     unpackrStream.on("data", (message: RPCMessage) => {
@@ -105,7 +103,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
             if (message[0] === MessageType.NOTIFY) {
                 // asynchronously run notification handlers.
                 // RPCNotifications don't need a response
-                void runNotificationHandlers(message);
+                runNotificationHandlers(message);
             }
 
             if (message[0] === MessageType.RESPONSE) {

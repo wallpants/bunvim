@@ -1,9 +1,9 @@
 {
   "name": "bunvim",
-  "version": "0.2.2",
-  "author": "Gual Casas",
+  "version": "0.0.1",
+  "author": "Wallpants",
   "repository": {
-    "url": "git+https://github.com/gualcasas/bunvim.git"
+    "url": "git+https://github.com/wallpants/bunvim.git"
   },
   "bin": {
     "bunvim": "src/cli/index.ts"

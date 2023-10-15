@@ -14,20 +14,22 @@ type MyEvents = {
 
 const nvim = await attach<MyEvents>({
     socket: SOCKET,
-    client: { name: "bunvim" },
+    client: {
+        name: "bunvim",
+        version: {
+            minor: 0,
+        },
+        methods: {
+            "some-method": {
+                async: false,
+                nargs: 9,
+            },
+        },
+        attributes: {
+            website: "https://wallpants.io",
+        },
+    },
     logging: { level: "debug" },
-});
-
-await nvim.call("nvim_ui_attach", [500, 500, {}]);
-
-nvim.onNotification("redraw", (events) => {
-    events.forEach(([event, args]) => {
-        if (event === "scroll") {
-            // TODO(gualcasas): args[0] is not properly inferred
-            const val = args[0];
-            console.log("val: ", val);
-        }
-    });
 });
 
 nvim.detach();

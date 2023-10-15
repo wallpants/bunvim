@@ -157,24 +157,34 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
         })().catch((err) => logger?.error("unpackrStream error", err));
     });
 
-    return {
-        call(func, args) {
-            const reqId = ++lastReqId;
-            const request: RPCRequest = [MessageType.REQUEST, reqId, func as string, args];
+    const call: Nvim["call"] = (func, args) => {
+        const reqId = ++lastReqId;
+        const request: RPCRequest = [MessageType.REQUEST, reqId, func as string, args];
 
-            return new Promise((resolve, reject) => {
-                // Register response listener before adding request to queue to avoid
-                // response coming in before listener was set up.
-                emitter.once(`response-${reqId}`, (error, result) => {
-                    if (error) reject(error);
-                    resolve(result as unknown);
-                });
-
-                messageOutQueue.push(request);
-                // Start processing queue if we're not already
-                processMessageOutQueue();
+        return new Promise((resolve, reject) => {
+            // Register response listener before adding request to queue to avoid
+            // response coming in before listener was set up.
+            emitter.once(`response-${reqId}`, (error, result) => {
+                if (error) reject(error);
+                resolve(result as unknown);
             });
-        },
+
+            messageOutQueue.push(request);
+            // Start processing queue if we're not already
+            processMessageOutQueue();
+        });
+    };
+
+    await call("nvim_set_client_info", [
+        client.name,
+        client.version ?? {},
+        client.type ?? "msgpack-rpc",
+        client.methods ?? {},
+        client.attributes ?? {},
+    ]);
+
+    return {
+        call,
         onNotification(notification, callback) {
             const handlers = notificationHandlers.get(notification as string) ?? {};
             handlers[++handlerId] = callback;
@@ -184,7 +194,6 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
             requestHandlers.set(method as string, callback);
         },
         detach() {
-            // TODO(gualcasas): make this async and await for detach confirmation
             nvimSocket.end();
         },
         logger: logger,

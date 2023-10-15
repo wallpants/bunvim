@@ -23,6 +23,7 @@ export type Client = {
      * ```
      */
     name: string;
+    /** Dictionary describing the version */
     version?: {
         /** major version (defaults to 0 if not set, for no release yet) */
         major?: number;
@@ -34,6 +35,39 @@ export type Client = {
         prerelease?: string;
         /** hash or similar identifier of commit */
         commit?: string;
+    };
+    /**
+     * - `"remote"` remote client connected "Nvim flavored" MessagePack-RPC (responses must be in reverse order of requests). msgpack-rpc
+     * - `"msgpack-rpc"` remote client connected to Nvim via fully MessagePack-RPC compliant protocol.
+     * - `"ui"` gui frontend
+     * - `"embedder"` application using Nvim as a component (for example, IDE/editor implementing a vim mode).
+     * - `"host"` plugin host, typically started by nvim
+     * - `"plugin"` single plugin, started by nvim
+     *
+     * @default
+     * "msgpack-rpc"
+     */
+    type?: "remote" | "msgpack-rpc" | "ui" | "embedder" | "host" | "plugin";
+    /**
+     * Builtin methods in the client.
+     * For a host, this does not include plugin methods which will be discovered later.
+     * The key should be the method name.
+     */
+    methods?: Record<
+        string,
+        {
+            async?: boolean;
+            nargs?: number;
+        }
+    >;
+    /**
+     * Arbitrary string:string map of informal client properties.
+     */
+    attributes?: {
+        [key: string]: string;
+        website?: string;
+        license?: string;
+        logo?: string;
     };
 };
 

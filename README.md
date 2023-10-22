@@ -1,7 +1,7 @@
 # Bunvim
 
-<img src="nvim.svg" height="60px" align="right" style="margin-right: 10px;" />
-<img src="bun.svg" height="60px" align="right" />
+<img src="docs/nvim.svg" height="60px" align="right" />
+<img src="docs/bun.svg" height="60px" align="right" />
 
 Bunvim is a [Bun](https://bun.sh/) client that allows you to interact with Neovim through RPC
 using TypeScript and JavaScript. If you're familiar with Neovim's Lua API, you'll find this client easy to use.

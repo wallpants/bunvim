@@ -15,11 +15,13 @@ export type LogLevel = "error" | "warn" | "info" | "http" | "verbose" | "debug" 
 export type Client = {
     /**
      * `name` can be used to find channel id on neovim.
-     * It's also used for logging
+     * It's also used for logging.
      *
      * ```lua
      * -- look for channel.client.name in channel list
+     *
      * local chans_list = vim.fn.nvim_list_chans()
+     * vim.print(chans_list)
      * ```
      */
     name: string;
@@ -98,12 +100,15 @@ export type AttachParams = {
     socket: string;
 
     /**
-     * RPC client info
+     * RPC client info, only name is required.
      * This is sent to neovim on-connection-open by calling `nvim_set_client_info()`
      * @see {@link https://neovim.io/doc/user/api.html#nvim_set_client_info()}
      */
     client: Client;
 
+    /**
+     * If left undefined, logging will be disabled.
+     */
     logging?: {
         /**
          * @remarks
@@ -120,6 +125,12 @@ export type AttachParams = {
          * - silly
          */
         level?: LogLevel | undefined;
+        /**
+         * Path to write logs to.
+         *
+         * @example
+         * "~/Projects/logs/my-plugin.log"
+         */
         file?: string | undefined;
     };
 };
@@ -156,14 +167,6 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
      *
      * @param func - function name
      * @param args - function arguments, provide empty array `[]` if no args
-     *
-     * @example
-     * ```typescript
-     * const currLine = await nvim.call("nvim_get_current_line", []);
-     * nvim.logger?.info(currLine);
-     *
-     * await nvim.call("nvim_buf_set_lines", [0, 0, -1, true, ["replace all content"]]);
-     * ```
      */
     call<M extends keyof NeovimApi["functions"]>(
         func: M,
@@ -171,7 +174,9 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
     ): Promise<NeovimApi["functions"][M]["return_type"]>;
     /**
      *
-     * Register/Update a handler for rpc notifications
+     * Register a handler for rpc notifications.
+     * There can be multiple handlers setup for the same notification.
+     * Return `true` to remove handler.
      *
      * @param notification - event name
      * @param callback - notification handler

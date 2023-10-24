@@ -27,7 +27,7 @@ bun install bunvim
 
 ## Usage
 
-For examples of plugins using Bunvim, take a look at [github-preview.nvim](https://github.com/wallpants/github-preview.nvim).
+For examples of plugins using Bunvim, take a look at [ghost-text.nvim](https://github.com/wallpants/ghost-text.nvim) and [github-preview.nvim](https://github.com/wallpants/github-preview.nvim).
 
 You should keep a tab open with [Neovim API docs](https://neovim.io/doc/user/api.html) when working with Bunvim.
 Although this client includes generated TypeScript types, you'll find the detailed descriptions in the official docs very helpful if not necessary.

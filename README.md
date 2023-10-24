@@ -124,8 +124,10 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <h4><code>nvim.call(function: string, args: unknown[])</code></h4>
+        <code>nvim.call(function: string, args: unknown[])</code>
     </summary>
+
+>
 
 > Used to call [any of these functions](https://neovim.io/doc/user/api.html). They're all typed. You should
 > get function names autocompletion & warnings from TypeScript if the parameters don't match the expected types.
@@ -141,8 +143,10 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <h4><code>nvim.channelId()</code></h4>
+        <code>nvim.channelId()</code>
     </summary>
+
+>
 
 > Calls [`nvim_get_api_info`](<https://neovim.io/doc/user/api.html#nvim_get_api_info()>)
 > and returns the RPC Channel ID included in the response. Channel ID is memoized for future calls.
@@ -157,8 +161,10 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <h4><code>nvim.onNotification(notification: string, callback: function)</code></h4>
+        <code>nvim.onNotification(notification: string, callback: function)</code>
     </summary>
+
+>
 
 > Registers a handler for a specific RPC Notification.
 >
@@ -226,8 +232,10 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <h4><code>nvim.onRequest(request: string, callback: function)</code></h4>
+        <code>nvim.onRequest(request: string, callback: function)</code>
     </summary>
+
+>
 
 > Registers a handler for a specific RPC Request.
 >
@@ -298,8 +306,10 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <h4><code>nvim.detach()</code></h4>
+        <code>nvim.detach()</code>
     </summary>
+
+>
 
 > Closes connection with neovim.
 >
@@ -313,8 +323,10 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <h4><code>nvim.logger</code></h4>
+        <code>nvim.logger</code>
     </summary>
+
+>
 
 > Instance of [winston logger](https://github.com/winstonjs/winston).
 > May be `undefined` if logging was not enabled.

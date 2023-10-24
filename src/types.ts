@@ -174,6 +174,16 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
     ): Promise<NeovimApi["functions"][M]["return_type"]>;
     /**
      *
+     * Calls `nvim_get_api_info` on first call, which includes `channelId` in its response,
+     * and returns it.
+     *
+     * Subsequent calls to channelId() return `memoized` value.
+     *
+     * @returns RPC channel
+     */
+    channelId(): Promise<number>;
+    /**
+     *
      * Register a handler for rpc notifications.
      * There can be multiple handlers setup for the same notification.
      * Return `true` to remove handler.
@@ -236,14 +246,4 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
      * to `attach`
      */
     logger: winston.Logger | undefined;
-    /**
-     *
-     * Calls `nvim_get_api_info` on first call, which includes `channelId` in its response,
-     * and returns it.
-     *
-     * Subsequent calls to channelId() return `memoized` value.
-     *
-     * @returns RPC channel
-     */
-    channelId(): Promise<number>;
 };

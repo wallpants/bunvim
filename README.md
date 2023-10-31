@@ -407,19 +407,10 @@ const nvim = await attach({
 If you want to log/print a message to the user in Neovim, use:
 
 ```typescript
-/**
- * levels according to `:lua vim.print(vim.log.levels)`
- *
- * 0 = TRACE
- * 1 = DEBUG
- * 2 = INFO
- * 3 = WARN
- * 4 = ERROR
- * 5 = OFF
- */
+/* levels according to `:lua vim.print(vim.log.levels)` */
+import { NVIM_LOG_LEVELS } from "bunvim";
 
-const LOG_LEVEL = 2;
-await nvim.call("nvim_notify", ["some message", LOG_LEVEL, {}]);
+await nvim.call("nvim_notify", ["some message", NVIM_LOG_LEVELS.INFO, {}]);
 ```
 
 ## Roadmap

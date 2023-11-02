@@ -1,4 +1,5 @@
 export { attach } from "./attach.ts";
+
 export * from "./types.ts";
 
 export const NVIM_LOG_LEVELS = {

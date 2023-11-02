@@ -174,14 +174,9 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
     ): Promise<NeovimApi["functions"][M]["return_type"]>;
     /**
      *
-     * Calls `nvim_get_api_info` on first call, which includes `channelId` in its response,
-     * and returns it.
-     *
-     * Subsequent calls to channelId() return `memoized` value.
-     *
-     * @returns RPC channel
+     * RPC channel
      */
-    channelId(): Promise<number>;
+    channelId: number;
     /**
      *
      * Register a handler for rpc notifications.

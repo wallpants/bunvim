@@ -42,7 +42,6 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
     let lastReqId = 0;
     let handlerId = 0;
     let awaitingResponse = false;
-    let channelId: number | null = null;
 
     const nvimSocket = await Bun.connect({
         unix: socket,
@@ -183,8 +182,12 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
         client.attributes ?? {},
     ]);
 
+    const channelId = (await call("nvim_get_api_info", []))[0] as number;
+
     return {
         call,
+        channelId,
+        logger: logger,
         onNotification(notification, callback) {
             const handlers = notificationHandlers.get(notification as string) ?? {};
             handlers[++handlerId] = callback;
@@ -195,13 +198,6 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
         },
         detach() {
             nvimSocket.end();
-        },
-        logger: logger,
-        async channelId() {
-            if (channelId !== null) return channelId;
-            const [chanId] = (await (await this).call("nvim_get_api_info", [])) as [number];
-            channelId = chanId;
-            return channelId;
         },
     };
 }

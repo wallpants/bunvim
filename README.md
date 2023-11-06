@@ -361,7 +361,8 @@ an `Nvim` object that can be used to interact with Neovim.
 
 ## 🖨️ Logging
 
-To enable logging to **Console** and/or **File**, a logging `level` must be specified when calling the `attach` method:
+To enable logging to **Console** and/or **File**, a `logging.level`
+must be specified when calling the `attach` method.
 
 ```typescript
 const nvim = await attach({
@@ -375,9 +376,23 @@ const nvim = await attach({
 nvim.logger?.info("hello world");
 ```
 
+**Bunvim** internally logs with `logger.debug()` and `logger.error()`.
+Set `logging.level` higher than `debug` to not display bunvim's internal logs when
+printing logs for your plugin.
+
+Levels from highest to lowest priority:
+
+1.  error
+2.  warn
+3.  info
+4.  http
+5.  verbose
+6.  debug
+7.  silly
+
 ### Console
 
-After setting a log `level`, you can see your logs live with the command `bunvim logs` and
+After setting a `logging.level`, you can see your logs live with the command `bunvim logs` and
 specifying the `client.name` you defined in your `attach`.
 
 In a terminal, run the command:
@@ -415,7 +430,6 @@ const nvim = await attach({
 If you want to log/print a message to the user in Neovim, use:
 
 ```typescript
-/* levels according to `:lua vim.print(vim.log.levels)` */
 import { NVIM_LOG_LEVELS } from "bunvim";
 
 await nvim.call("nvim_notify", ["some message", NVIM_LOG_LEVELS.INFO, {}]);

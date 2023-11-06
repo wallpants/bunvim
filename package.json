@@ -35,7 +35,7 @@
   "dependencies": {
     "commander": "^11.0.0",
     "msgpackr": "^1.9.9",
-    "winston": "^3.10.0"
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.3.0",

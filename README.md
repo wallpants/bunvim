@@ -341,7 +341,7 @@ an `Nvim` object that can be used to interact with Neovim.
 >
 > Used to log data to console and/or file. Does not log/print messages to Neovim.
 >
-> [See Logging](#logging).
+> [See Logging](#%EF%B8%8F-logging).
 >
 > ```typescript
 > // log functions sorted from highest to lowest priority:

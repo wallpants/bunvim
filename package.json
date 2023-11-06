@@ -23,7 +23,7 @@
   },
   "scripts": {
     "vi": "nvim",
-    "format": "prettier **/*{ts} --write",
+    "format": "prettier **.{md,ts} -w",
     "lint": "tsc && eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "commit": "cz"
   },

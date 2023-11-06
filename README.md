@@ -14,18 +14,18 @@ All functionality is implemented in [one file](https://github.com/wallpants/bunv
 If you're looking for higher levels of abstraction, take a look at [neovim/node-client](https://github.com/neovim/node-client)
 and [neoclide/neovim](https://github.com/neoclide/neovim). Good luck.
 
-## Requirements
+## ✅ Requirements
 
--   [Bun](https://bun.sh/)
--   [Neovim](https://neovim.io/)
+-   [x] [Bun](https://bun.sh/)
+-   [x] [Neovim](https://neovim.io/)
 
-## Installation
+## 📦 Installation
 
 ```sh
 bun install bunvim
 ```
 
-## Usage
+## 💻 Usage
 
 For examples of plugins using Bunvim, take a look at [ghost-text.nvim](https://github.com/wallpants/ghost-text.nvim) and [github-preview.nvim](https://github.com/wallpants/github-preview.nvim).
 
@@ -117,7 +117,7 @@ const nvim = await attach({
 });
 ```
 
-## API Reference
+## 📖 API Reference
 
 This module exports only one method `attach` and a bunch of TypeScript types. `attach` returns
 an `Nvim` object that can be used to interact with Neovim.
@@ -143,16 +143,24 @@ an `Nvim` object that can be used to interact with Neovim.
 
 <details>
     <summary>
-        <code>nvim.channelId()</code>
+        <code>nvim.channelId</code>
     </summary>
 
 >
 
-> Calls [`nvim_get_api_info`](<https://neovim.io/doc/user/api.html#nvim_get_api_info()>)
-> and returns the RPC Channel ID included in the response. Channel ID is memoized for future calls.
+> RPC Channel ID.
 >
 > ```typescript
-> const channelId = await nvim.channelId();
+> const channelId = nvim.channelId;
+>
+> await nvim.call("nvim_create_autocmd", [
+>     ["CursorMove"],
+>     {
+>         desc: "Notify my-plugin",
+>         command: `lua
+>         vim.rpcnotify(${channelId}, "my-notification")`,
+>     },
+> ]);
 > ```
 
 > ---
@@ -209,7 +217,7 @@ an `Nvim` object that can be used to interact with Neovim.
 >     await nvim.call("nvim_buf_set_lines", [0, 0, 2, true, [`row: ${row}`, `col: ${col}`]]);
 > });
 >
-> const channelId = await nvim.channelId();
+> const channelId = nvim.channelId;
 >
 > // create autocommand to notify our plugin via `vim.rpcnotify`
 > // whenever the cursor moves
@@ -285,7 +293,7 @@ an `Nvim` object that can be used to interact with Neovim.
 >     return null;
 > });
 >
-> const channelId = await nvim.channelId();
+> const channelId = nvim.channelId;
 >
 > // create autocommand to call our function via `vim.rpcrequest`
 > // whenever neovim is about to close
@@ -351,7 +359,7 @@ an `Nvim` object that can be used to interact with Neovim.
 
 </details>
 
-## Logging
+## 🖨️ Logging
 
 To enable logging to **Console** and/or **File**, a logging `level` must be specified when calling the `attach` method:
 
@@ -412,10 +420,3 @@ import { NVIM_LOG_LEVELS } from "bunvim";
 
 await nvim.call("nvim_notify", ["some message", NVIM_LOG_LEVELS.INFO, {}]);
 ```
-
-## Roadmap
-
--   [x] write API Reference
--   [ ] write tests
--   [ ] cli should throw error if we provide extra args, `bun bunvim types src` doesn't throw and it should
--   [ ] fix type inference for ui events

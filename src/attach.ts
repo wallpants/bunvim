@@ -1,3 +1,4 @@
+import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 import { EventEmitter } from "node:events";
 import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
@@ -11,8 +12,6 @@ import {
     type RPCRequest,
     type RPCResponse,
 } from "./types.ts";
-// eslint-disable-next-line import/named
-import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 
 const packr = new Packr({ useRecords: false });
 const unpackrStream = new UnpackrStream({ useRecords: false });

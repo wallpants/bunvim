@@ -40,7 +40,6 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
     let lastReqId = 0;
     let handlerId = 0;
-    let awaitingResponse = false;
 
     const nvimSocket = await Bun.connect({
         unix: socket,
@@ -67,8 +66,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
     function processMessageOutQueue() {
         // All writing to neovim happens through this function.
         // Outgoing RPC messages are added to the `messageOutQueue` and sent ASAP
-        if (!messageOutQueue.length || awaitingResponse) return;
-        awaitingResponse = true;
+        if (!messageOutQueue.length) return;
 
         const message = messageOutQueue.shift();
         if (!message) {
@@ -78,6 +76,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
         logger?.debug(prettyRPCMessage(message, "out"));
         nvimSocket.write(packr.pack(message));
+        processMessageOutQueue();
     }
 
     function runNotificationHandlers(message: RPCNotification) {
@@ -109,7 +108,6 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
                 // message[2] error
                 // message[3] result
                 emitter.emit(`response-${message[1]}`, message[2], message[3]);
-                awaitingResponse = false;
             }
 
             if (message[0] === MessageType.REQUEST) {

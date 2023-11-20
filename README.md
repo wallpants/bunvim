@@ -16,8 +16,8 @@ and [neoclide/neovim](https://github.com/neoclide/neovim). Good luck.
 
 ## ✅ Requirements
 
--   [x] [Bun](https://bun.sh/)
--   [x] [Neovim](https://neovim.io/)
+- [x] [Bun](https://bun.sh/)
+- [x] [Neovim](https://neovim.io/)
 
 ## 📦 Installation
 
@@ -42,8 +42,8 @@ import { attach } from "bunvim";
 const SOCKET = "/tmp/bunvim.nvim.socket";
 
 const nvim = await attach({
-    socket: SOCKET,
-    client: { name: "my-plugin-name" },
+  socket: SOCKET,
+  client: { name: "my-plugin-name" },
 });
 
 // append "hello world" to current buffer
@@ -57,13 +57,13 @@ await nvim.call("nvim_command", ["vs"]);
 
 // print cursor position on cursor move
 await nvim.call("nvim_create_autocmd", [
-    ["CursorHold", "CursorHoldI"],
-    {
-        desc: "Print Cursor Position",
-        command: `lua
+  ["CursorHold", "CursorHoldI"],
+  {
+    desc: "Print Cursor Position",
+    command: `lua
             local cursor_pos = vim.api.nvim_win_get_cursor(0)
             vim.print(cursor_pos)`,
-    },
+  },
 ]);
 
 nvim.detach();
@@ -112,8 +112,8 @@ const SOCKET = process.env["NVIM"];
 if (!SOCKET) throw Error("socket missing");
 
 const nvim = await attach({
-    socket: SOCKET,
-    client: { name: "my-plugin-name" },
+  socket: SOCKET,
+  client: { name: "my-plugin-name" },
 });
 ```
 
@@ -154,12 +154,12 @@ an `Nvim` object that can be used to interact with Neovim.
 > const channelId = nvim.channelId;
 >
 > await nvim.call("nvim_create_autocmd", [
->     ["CursorMove"],
->     {
->         desc: "Notify my-plugin",
->         command: `lua
+>   ["CursorMove"],
+>   {
+>     desc: "Notify my-plugin",
+>     command: `lua
 >         vim.rpcnotify(${channelId}, "my-notification")`,
->     },
+>   },
 > ]);
 > ```
 
@@ -366,11 +366,11 @@ must be specified when calling the `attach` method.
 
 ```typescript
 const nvim = await attach({
-    socket: SOCKET,
-    client: { name: "my-plugin-name" },
-    logging: {
-        level: "debug", // <= LOG LEVEL
-    },
+  socket: SOCKET,
+  client: { name: "my-plugin-name" },
+  logging: {
+    level: "debug", // <= LOG LEVEL
+  },
 });
 
 nvim.logger?.info("hello world");

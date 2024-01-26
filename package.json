@@ -1,10 +1,10 @@
 {
   "name": "bunvim",
-  "version": "0.0.0",
   "author": "wallpants",
-  "description": "Neovim bun client",
-  "license": "MIT",
   "type": "module",
+  "version": "0.0.0",
+  "license": "MIT",
+  "description": "Neovim bun client",
   "repository": {
     "type": "git",
     "url": "git://github.com/wallpants/bunvim.git"

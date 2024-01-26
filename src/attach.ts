@@ -85,7 +85,8 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
         const handlers = notificationHandlers.get(message[1]);
         if (!handlers) return;
 
-        Object.entries(handlers).map(async ([id, handler]) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        Object.entries(handlers).forEach(async ([id, handler]) => {
             const result = await handler(message[2]);
             // remove notification handler if it returns specifically `true`
             // other truthy values won't trigger the removal
@@ -161,7 +162,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
             // Register response listener before adding request to queue to avoid
             // response coming in before listener was set up.
             emitter.once(`response-${reqId}`, (error, result) => {
-                if (error) reject(error);
+                if (error) reject(error as Error);
                 resolve(result as unknown);
             });
 

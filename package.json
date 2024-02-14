@@ -43,7 +43,7 @@
     "lint": "tsc && eslint . --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "commander": "^11.1.0",
+    "commander": "^12.0.0",
     "msgpackr": "^1.10.1",
     "winston": "^3.11.0"
   },

@@ -261,8 +261,8 @@ an `Nvim` object that can be used to interact with Neovim.
 >     notifications: EventsMap; // default type
 >     requests: {
 >         // declare custom request: "before_exit",
->         // that would be called with args: [bufferName: string]
->         "before_exit": [bufferName: string];
+>         // that would be called with args: [buffer_name: string]
+>         "before_exit": [buffer_name: string];
 >     };
 > }
 >
@@ -270,8 +270,8 @@ an `Nvim` object that can be used to interact with Neovim.
 > const nvim = await attach<MyEvents>({ ... })
 >
 > // register a handler for the request "before_exit"
-> nvim.onRequest("before_exit", async ([bufferName]) => {
->     // "bufferName" is of type "string" as specified above
+> nvim.onRequest("before_exit", async ([buffer_name]) => {
+>     // "buffer_name" is of type "string" as specified above
 >
 >     // CAUTION:
 >     // it's up to you to make sure the handler receives the correct args,
@@ -279,7 +279,7 @@ an `Nvim` object that can be used to interact with Neovim.
 >
 >     // this should actually never get called,
 >     // because this handler gets overwritten below
->     console.log("bufferName: ", bufferName);
+>     console.log("buffer_name: ", buffer_name);
 >
 >     // we must return something to unblock neovim
 >     return null;
@@ -288,8 +288,8 @@ an `Nvim` object that can be used to interact with Neovim.
 > // only one handler per request may be registered.
 > // if you call `nvim.onRequest` for an already registered handler,
 > // the older handler is replaced with the new one.
-> nvim.onRequest("before_exit", async ([bufferName]) => {
->     gracefulShutdown(bufferName);
+> nvim.onRequest("before_exit", async ([buffer_name]) => {
+>     gracefulShutdown(buffer_name);
 >     return null;
 > });
 >

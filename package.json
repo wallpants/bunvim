@@ -40,7 +40,9 @@
     "commit": "cz",
     "vi": "nvim",
     "format": "prettier **/*.{md,ts,yml} -w",
-    "lint": "tsc && eslint . --ext ts --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc",
+    "check": "bun run typecheck && bun run lint"
   },
   "dependencies": {
     "commander": "^12.0.0",

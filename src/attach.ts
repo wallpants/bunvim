@@ -151,7 +151,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
             // Continue processing queue
             processMessageOutQueue();
-        })().catch((err) => logger?.error("unpackrStream error", err));
+        })().catch((err: unknown) => logger?.error("unpackrStream error", err));
     });
 
     const call: Nvim["call"] = (func, args) => {

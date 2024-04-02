@@ -61,6 +61,6 @@
     "prettier": "^3.2.5",
     "prettier-plugin-organize-imports": "^3.2.4",
     "semantic-release": "^23.0.6",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.3"
   }
 }

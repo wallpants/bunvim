@@ -58,7 +58,7 @@
     "commitizen": "^4.3.0",
     "commitlint": "^19.3.0",
     "eslint": "^8.57.0",
-    "prettier": "^3.2.5",
+    "prettier": "^3.3.0",
     "prettier-plugin-organize-imports": "^3.2.4",
     "semantic-release": "^23.1.1",
     "typescript": "^5.4.5"

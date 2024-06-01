@@ -45,7 +45,7 @@
     "check": "bun run typecheck && bun run lint"
   },
   "dependencies": {
-    "commander": "^12.0.0",
+    "commander": "^12.1.0",
     "msgpackr": "^1.10.2",
     "winston": "^3.13.0"
   },

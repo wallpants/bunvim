@@ -52,7 +52,7 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^19.2.2",
     "@commitlint/cz-commitlint": "^19.2.0",
-    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^7.18.0",
     "bun-types": "latest",
     "commitizen": "^4.3.0",

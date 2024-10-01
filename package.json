@@ -59,7 +59,7 @@
     "commitlint": "^19.3.0",
     "eslint": "^8.57.0",
     "prettier": "^3.3.3",
-    "prettier-plugin-organize-imports": "^4.0.0",
+    "prettier-plugin-organize-imports": "^4.1.0",
     "semantic-release": "^24.0.0",
     "typescript": "^5.5.4"
   }

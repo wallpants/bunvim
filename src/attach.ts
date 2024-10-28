@@ -75,7 +75,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
         }
 
         logger?.debug(prettyRPCMessage(message, "out"));
-        nvimSocket.write(packr.pack(message));
+        nvimSocket.write(packr.pack(message) as unknown as Uint8Array);
         processMessageOutQueue();
     }
 

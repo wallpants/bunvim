@@ -2,50 +2,20 @@ import { resolve } from "node:path";
 import winston from "winston";
 import { MessageType, type Client, type LogLevel, type RPCMessage } from "./types.ts";
 
-export function createLogger(
-    client: Client,
-    logging?: { level?: LogLevel | undefined; file?: string | undefined },
-) {
-    if (!logging?.level) return;
-
-    const defaultFilePath = `/tmp/${client.name}.bunvim.logs`;
-
+export function createLogger(client: Client, level: LogLevel, file?: string) {
+    // Create a simple and standard winston logger
+    const filename = file ? resolve(file) : `/tmp/${client.name}.log`;
     const logger = winston.createLogger({
-        level: logging.level,
+        level,
+        format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
         transports: [
             new winston.transports.File({
-                filename: defaultFilePath,
-                format: winston.format.combine(
-                    winston.format.colorize(),
-                    winston.format.timestamp({ format: "HH:mm:ss.SSS" }),
-                    winston.format.printf((info) => `\n${info.level} ${info["timestamp"]}`),
-                ),
-            }),
-            new winston.transports.File({
-                filename: defaultFilePath,
-                format: winston.format.combine(
-                    winston.format((info) => {
-                        // @ts-expect-error ts mad we delete non-optional prop `level`
-                        delete info.level;
-                        return info;
-                    })(),
-                    winston.format.prettyPrint({
-                        colorize: true,
-                    }),
-                ),
+                filename,
+                options: { flags: "w" }, // 'w' flag truncates the file if it exists
             }),
         ],
     });
-
-    if (logging.file) {
-        const resolved = resolve(logging.file);
-        logger.add(
-            new winston.transports.File({
-                filename: resolved,
-                format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
-            }),
-        );
-    }
+    console.log(`creating logger of level ${level} and file ${file}`);
 
     return logger;
 }

@@ -11,6 +11,7 @@
     "plugin:@typescript-eslint/strict-type-checked",
     "plugin:@typescript-eslint/stylistic-type-checked"
   ],
+  "ignorePatterns": ["vitest.config.ts"],
   "rules": {
     "@typescript-eslint/restrict-template-expressions": ["error", { "allowNumber": true }],
     "@typescript-eslint/consistent-type-definitions": ["error", "type"],

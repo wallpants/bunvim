@@ -1,5 +1,6 @@
 import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 import { EventEmitter } from "node:events";
+import net from "node:net";
 import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
     MessageType,
@@ -14,7 +15,6 @@ import {
 } from "./types.ts";
 
 const packr = new Packr({ useRecords: false });
-const unpackrStream = new UnpackrStream({ useRecords: false });
 
 [0, 1, 2].forEach((type) => {
     // https://neovim.io/doc/user/api.html#api-definitions
@@ -30,7 +30,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
     client,
     logging,
 }: AttachParams): Promise<Nvim<ApiInfo>> {
-    const logger = createLogger(client, logging);
+    const logger = createLogger(client, logging?.level ?? "info", logging?.file);
     const messageOutQueue: RPCMessage[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const notificationHandlers = new Map<string, Record<string, EventHandler<any, unknown>>>();
@@ -41,26 +41,29 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
     let lastReqId = 0;
     let handlerId = 0;
 
-    const nvimSocket = await Bun.connect({
-        unix: socket,
-        socket: {
-            binaryType: "uint8array",
-            data(_, data) {
-                // Sometimes RPC messages are split into multiple socket messages.
-                // `unpackrStream` handles collecting all socket messages if the RPC message
-                // is split and decoding it.
-                unpackrStream.write(data);
-            },
-            error(_, error) {
-                logger?.error("socket error", error);
-            },
-            end() {
-                logger?.debug("connection closed by neovim");
-            },
-            close() {
-                logger?.debug("connection closed by bunvim");
-            },
-        },
+    const unpackrStream = new UnpackrStream({ useRecords: false });
+    const nvimSocket = await new Promise<net.Socket>((resolve, reject) => {
+        const client = new net.Socket();
+        client.once("error", reject);
+        client.once("connect", () => {
+            client
+                .removeListener("error", reject)
+                .on("data", (data: Buffer) => {
+                    unpackrStream.write(data);
+                })
+                .on("error", (error) => {
+                    logger.error("socket error", error);
+                })
+                .on("end", () => {
+                    logger.debug("connection closed by neovim");
+                })
+                .on("close", () => {
+                    logger.debug("connection closed by node");
+                });
+            resolve(client);
+        });
+
+        client.connect(socket);
     });
 
     function processMessageOutQueue() {
@@ -70,11 +73,11 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
         const message = messageOutQueue.shift();
         if (!message) {
-            logger?.error("Cannot process undefined message");
+            logger.error("Cannot process undefined message");
             return;
         }
 
-        logger?.debug(prettyRPCMessage(message, "out"));
+        logger.debug(prettyRPCMessage(message, "out"));
         nvimSocket.write(packr.pack(message) as unknown as Uint8Array);
         processMessageOutQueue();
     }
@@ -97,7 +100,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
     unpackrStream.on("data", (message: RPCMessage) => {
         (async () => {
-            logger?.debug(prettyRPCMessage(message, "in"));
+            logger.debug(prettyRPCMessage(message, "in"));
             if (message[0] === MessageType.NOTIFY) {
                 // asynchronously run notification handlers.
                 // RPCNotifications don't need a response
@@ -151,7 +154,7 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
             // Continue processing queue
             processMessageOutQueue();
-        })().catch((err: unknown) => logger?.error("unpackrStream error", err));
+        })().catch((err: unknown) => logger.error("unpackrStream error", err));
     });
 
     const call: Nvim["call"] = (func, args) => {
@@ -195,7 +198,8 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
             requestHandlers.set(method as string, callback);
         },
         detach() {
-            nvimSocket.end();
+            nvimSocket.destroy();
+            unpackrStream.end();
         },
     };
 }

@@ -5,17 +5,17 @@ import { version } from "../../package.json";
 program.name("bunvim").description("CLI to work with neovim's bun client").version(version);
 
 program
-    .command("logs")
-    .description("print bunvim client logs")
-    .argument("<client_name>", "Client name you specify in your attach call.")
-    .action((name) => {
-        Bun.spawn({
-            cmd: ["tail", "-F", "-n", "0", `/tmp/${name}.bunvim.logs`],
-            stdin: null,
-            stdout: "inherit",
-        });
-    })
-    .exitOverride(() => process.exit(0));
+   .command("logs")
+   .description("print bunvim client logs")
+   .argument("<client_name>", "Client name you specify in your attach call.")
+   .action((name) => {
+      Bun.spawn({
+         cmd: ["tail", "-F", "-n", "0", `/tmp/${name}.bunvim.logs`],
+         stdin: null,
+         stdout: "inherit",
+      });
+   })
+   .exitOverride(() => process.exit(0));
 
 // function validateLevel(value: string) {
 //     const parsedInt = parseInt(value, 10);

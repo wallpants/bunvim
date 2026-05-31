@@ -1,4 +1,6 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "include": ["src", "./package.json", "eslint.config.ts"],
   "compilerOptions": {
     "lib": ["ESNext"],
     "module": "ESNext",
@@ -9,13 +11,10 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
-    "downlevelIteration": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
-
-    // strict: https://github.com/tsconfig/bases/blob/main/bases/strictest.json
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "exactOptionalPropertyTypes": true,
@@ -28,7 +27,8 @@
     "noUnusedParameters": true,
     "isolatedModules": true,
     "checkJs": true,
-    "esModuleInterop": true
-  },
-  "include": ["src", "./package.json"]
+    "esModuleInterop": true,
+    "composite": true,
+    "verbatimModuleSyntax": true
+  }
 }

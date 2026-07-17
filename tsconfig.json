@@ -1,13 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "include": ["src", "./package.json", "eslint.config.ts"],
+  "include": ["src", "./package.json"],
   "compilerOptions": {
     "lib": ["ESNext"],
     "module": "ESNext",
     "target": "ESNext",
     "moduleResolution": "Bundler",
     "moduleDetection": "force",
-    "types": ["bun-types"],
+    "types": ["bun"],
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
@@ -28,7 +28,6 @@
     "isolatedModules": true,
     "checkJs": true,
     "esModuleInterop": true,
-    "composite": true,
     "verbatimModuleSyntax": true
   }
 }

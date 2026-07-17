@@ -8,7 +8,8 @@ using TypeScript and JavaScript. If you're familiar with Neovim's Lua API, you'l
 
 This client includes [TypeScript definitions](https://github.com/wallpants/bunvim/blob/main/src/neovim-api.types.ts),
 generated from [Neovim's api-metadata](https://neovim.io/doc/user/api.html#api-metadata), describing API function signatures,
-including function parameters and return values.
+including function parameters and return values. The definitions can be regenerated against your local Neovim
+with the command `bunx bunvim types`.
 
 All functionality is implemented in [one file](https://github.com/wallpants/bunvim/blob/main/src/attach.ts).
 If you're looking for higher levels of abstraction, take a look at [neovim/node-client](https://github.com/neovim/node-client)
@@ -39,7 +40,7 @@ Create a script:
 // my-plugin.ts
 import { attach } from "bunvim";
 
-// RPC listenning address
+// RPC listening address
 const SOCKET = "/tmp/bunvim.nvim.socket";
 
 const nvim = await attach({
@@ -303,7 +304,7 @@ an `Nvim` object that can be used to interact with Neovim.
 >     {
 >         desc: "RPC Request before exit",
 >         command: `lua
->             local buffer_name = vim.api.nvim_get_current_buf()
+>             local buffer_name = vim.api.nvim_buf_get_name(0)
 >             vim.rpcrequest(${channelId}, "before_exit", buffer_name)`,
 >     },
 > ]);
@@ -417,12 +418,12 @@ You can also write your logs to a `file` by specifying a path when calling the `
 
 ```typescript
 const nvim = await attach({
-    socket: SOCKET,
-    client: { name: "my-plugin-name" },
-    logging: {
-        level: "debug", // <= LOG LEVEL
-        file: : "~/my-plugin-name.log" // <= PATH TO LOG FILE
-    },
+  socket: SOCKET,
+  client: { name: "my-plugin-name" },
+  logging: {
+    level: "debug", // <= LOG LEVEL
+    file: "/tmp/my-plugin-name.log", // <= PATH TO LOG FILE ("~" is not expanded)
+  },
 });
 ```
 

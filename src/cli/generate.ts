@@ -56,6 +56,9 @@ export type NeovimApi<
    // functions
    output += "  functions: {\n";
    neovimApi.functions.forEach((fun) => {
+      if (fun.deprecated_since !== undefined) {
+         output += `    /** @deprecated since api level ${fun.deprecated_since} */\n`;
+      }
       output += `    ${fun.name}: {
       parameters: [${parseParameters(fun.parameters)}];
       return_type: ${toTypescriptType(fun.return_type)};\n    };\n`;

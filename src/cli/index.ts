@@ -49,18 +49,16 @@ program
    )
    .option(
       "-l, --level <number>",
-      "Include info up to specified api level (inclusive). Leave unset to include all. Deprecated items are excluded by default.",
+      "Include info up to specified api level (inclusive). Leave unset to include all. Deprecated items are included and tagged with @deprecated.",
       validateLevel,
    )
    .action(async ({ level, outDir }: { level?: number; outDir?: string }) => {
       const proc = Bun.spawnSync({ cmd: ["nvim", "--api-info"] });
       const neovimApi = unpack(proc.stdout) as ApiMeta;
 
-      neovimApi.functions = neovimApi.functions.filter((fn) => {
-         if (fn.deprecated_since !== undefined) return false;
-         if (level !== undefined && fn.since > level) return false;
-         return true;
-      });
+      neovimApi.functions = neovimApi.functions.filter(
+         (fn) => level === undefined || fn.since <= level,
+      );
 
       const content = generateTypescriptContent(neovimApi);
 

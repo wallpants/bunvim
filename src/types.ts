@@ -127,9 +127,11 @@ export type AttachParams = {
       level?: LogLevel | undefined;
       /**
        * Path to write logs to.
+       * Relative paths are resolved from the current working directory;
+       * `~` is not expanded.
        *
        * @example
-       * "~/Projects/logs/my-plugin.log"
+       * "/tmp/my-plugin.log"
        */
       file?: string | undefined;
    };

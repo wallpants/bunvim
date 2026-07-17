@@ -143,7 +143,14 @@ export enum MessageType {
 
 export type RPCRequest = [MessageType.REQUEST, id: number, method: string, args: unknown[]];
 export type RPCNotification = [MessageType.NOTIFY, notification: string, args: unknown[]];
-export type RPCResponse = [MessageType.RESPONSE, id: number, error: string | null, result: unknown];
+// `error` is `null` on success. Errors from neovim arrive as
+// `[code, message]` tuples; errors sent by bunvim are strings.
+export type RPCResponse = [
+   MessageType.RESPONSE,
+   id: number,
+   error: [code: number, message: string] | string | null,
+   result: unknown,
+];
 export type RPCMessage = RPCRequest | RPCNotification | RPCResponse;
 
 export type EventHandler<Args, Returns> = (args: Args) => Awaitable<Returns>;
@@ -187,9 +194,12 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
     * @param callback - notification handler
     *
     * @example
-    * ```typescript
-    * await nvim.call("nvim_subscribe", ["my_rpc_notification"]);
+    * ```lua
+    * -- notify this client from neovim
+    * vim.rpcnotify(channel_id, "my_rpc_notification", "some-arg")
+    * ```
     *
+    * ```typescript
     * nvim.onNotification("my_rpc_notification", (args) => {
     *   nvim.logger?.info(args);
     *   // return true to remove listener

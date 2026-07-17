@@ -58,6 +58,14 @@ test("generateTypescriptContent renders all sections", () => {
             return_type: "Integer",
             method: false,
          },
+         {
+            name: "nvim_old",
+            since: 1,
+            deprecated_since: 13,
+            parameters: [],
+            return_type: "void",
+            method: false,
+         },
       ],
       ui_events: [{ name: "grid_line", parameters: [["Integer", "grid"]], since: 1 }],
       ui_options: ["rgb"],
@@ -71,6 +79,7 @@ test("generateTypescriptContent renders all sections", () => {
    expect(output).toContain("nvim_test: {");
    expect(output).toContain("parameters: [str: string, pos: [number, number]];");
    expect(output).toContain("return_type: number;");
+   expect(output).toContain("/** @deprecated since api level 13 */\n    nvim_old: {");
    expect(output).toContain("grid_line: {");
    expect(output).toContain("parameters: [grid: number];");
    expect(output).toContain("Exception: { id: 0; };");

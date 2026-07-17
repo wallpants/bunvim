@@ -203,6 +203,217 @@ export type NeovimApi<
          parameters: [buf: number, opts: Record<string, unknown>];
          return_type: Record<string, unknown>;
       };
+      /** @deprecated since api level 11 */
+      nvim_exec: {
+         parameters: [src: string, output: boolean];
+         return_type: string;
+      };
+      /** @deprecated since api level 7 */
+      nvim_command_output: {
+         parameters: [command: string];
+         return_type: string;
+      };
+      /** @deprecated since api level 7 */
+      nvim_execute_lua: {
+         parameters: [code: string, args: unknown[]];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 2 */
+      nvim_buf_get_number: {
+         parameters: [buffer: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 7 */
+      nvim_buf_clear_highlight: {
+         parameters: [buffer: number, ns_id: number, line_start: number, line_end: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 13 */
+      nvim_buf_add_highlight: {
+         parameters: [
+            buffer: number,
+            ns_id: number,
+            hl_group: string,
+            line: number,
+            col_start: number,
+            col_end: number,
+         ];
+         return_type: number;
+      };
+      /** @deprecated since api level 8 */
+      nvim_buf_set_virtual_text: {
+         parameters: [
+            buffer: number,
+            src_id: number,
+            line: number,
+            chunks: unknown[],
+            opts: Record<string, unknown>,
+         ];
+         return_type: number;
+      };
+      /** @deprecated since api level 9 */
+      nvim_get_hl_by_id: {
+         parameters: [hl_id: number, rgb: boolean];
+         return_type: Record<string, unknown>;
+      };
+      /** @deprecated since api level 9 */
+      nvim_get_hl_by_name: {
+         parameters: [name: string, rgb: boolean];
+         return_type: Record<string, unknown>;
+      };
+      /** @deprecated since api level 1 */
+      buffer_insert: {
+         parameters: [buffer: number, lnum: number, lines: string[]];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_line: {
+         parameters: [buffer: number, index: number];
+         return_type: string;
+      };
+      /** @deprecated since api level 1 */
+      buffer_set_line: {
+         parameters: [buffer: number, index: number, line: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_del_line: {
+         parameters: [buffer: number, index: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_line_slice: {
+         parameters: [
+            buffer: number,
+            start: number,
+            end: number,
+            include_start: boolean,
+            include_end: boolean,
+         ];
+         return_type: string[];
+      };
+      /** @deprecated since api level 1 */
+      buffer_set_line_slice: {
+         parameters: [
+            buffer: number,
+            start: number,
+            end: number,
+            include_start: boolean,
+            include_end: boolean,
+            replacement: string[],
+         ];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_set_var: {
+         parameters: [buffer: number, name: string, value: unknown];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      buffer_del_var: {
+         parameters: [buffer: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      window_set_var: {
+         parameters: [window: number, name: string, value: unknown];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      window_del_var: {
+         parameters: [window: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      tabpage_set_var: {
+         parameters: [tabpage: number, name: string, value: unknown];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      tabpage_del_var: {
+         parameters: [tabpage: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      vim_set_var: {
+         parameters: [name: string, value: unknown];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      vim_del_var: {
+         parameters: [name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 11 */
+      nvim_get_option_info: {
+         parameters: [name: string];
+         return_type: Record<string, unknown>;
+      };
+      /** @deprecated since api level 11 */
+      nvim_set_option: {
+         parameters: [name: string, value: unknown];
+         return_type: void;
+      };
+      /** @deprecated since api level 11 */
+      nvim_get_option: {
+         parameters: [name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 11 */
+      nvim_buf_get_option: {
+         parameters: [buffer: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 11 */
+      nvim_buf_set_option: {
+         parameters: [buffer: number, name: string, value: unknown];
+         return_type: void;
+      };
+      /** @deprecated since api level 11 */
+      nvim_win_get_option: {
+         parameters: [window: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 11 */
+      nvim_win_set_option: {
+         parameters: [window: number, name: string, value: unknown];
+         return_type: void;
+      };
+      /** @deprecated since api level 12 */
+      nvim_call_atomic: {
+         parameters: [calls: unknown[]];
+         return_type: unknown[];
+      };
+      /** @deprecated since api level 13 */
+      nvim_subscribe: {
+         parameters: [event: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 13 */
+      nvim_unsubscribe: {
+         parameters: [event: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 13 */
+      nvim_out_write: {
+         parameters: [str: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 13 */
+      nvim_err_write: {
+         parameters: [str: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 13 */
+      nvim_err_writeln: {
+         parameters: [str: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 13 */
+      nvim_notify: {
+         parameters: [msg: string, log_level: number, opts: Record<string, unknown>];
+         return_type: unknown;
+      };
       nvim_ui_term_event: {
          parameters: [event: string, value: unknown];
          return_type: void;
@@ -305,6 +516,11 @@ export type NeovimApi<
       };
       nvim_ui_attach: {
          parameters: [width: number, height: number, options: Record<string, unknown>];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      ui_attach: {
+         parameters: [width: number, height: number, enable_rgb: boolean];
          return_type: void;
       };
       nvim_ui_set_focus: {
@@ -700,6 +916,349 @@ export type NeovimApi<
       nvim_win_text_height: {
          parameters: [win: number, opts: Record<string, unknown>];
          return_type: Record<string, unknown>;
+      };
+      /** @deprecated since api level 1 */
+      buffer_line_count: {
+         parameters: [buf: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_lines: {
+         parameters: [buf: number, start: number, end: number, strict_indexing: boolean];
+         return_type: string[];
+      };
+      /** @deprecated since api level 1 */
+      buffer_set_lines: {
+         parameters: [
+            buf: number,
+            start: number,
+            end: number,
+            strict_indexing: boolean,
+            replacement: string[],
+         ];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_var: {
+         parameters: [buf: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_name: {
+         parameters: [buf: number];
+         return_type: string;
+      };
+      /** @deprecated since api level 1 */
+      buffer_set_name: {
+         parameters: [buf: number, name: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_is_valid: {
+         parameters: [buf: number];
+         return_type: boolean;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_mark: {
+         parameters: [buf: number, name: string];
+         return_type: [number, number];
+      };
+      /** @deprecated since api level 1 */
+      vim_command_output: {
+         parameters: [command: string];
+         return_type: string;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_number: {
+         parameters: [buffer: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      buffer_clear_highlight: {
+         parameters: [buffer: number, ns_id: number, line_start: number, line_end: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      buffer_add_highlight: {
+         parameters: [
+            buffer: number,
+            ns_id: number,
+            hl_group: string,
+            line: number,
+            col_start: number,
+            col_end: number,
+         ];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_set_option: {
+         parameters: [name: string, value: unknown];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_option: {
+         parameters: [name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      buffer_get_option: {
+         parameters: [buffer: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      buffer_set_option: {
+         parameters: [buffer: number, name: string, value: unknown];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      window_get_option: {
+         parameters: [window: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      window_set_option: {
+         parameters: [window: number, name: string, value: unknown];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_subscribe: {
+         parameters: [event: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_unsubscribe: {
+         parameters: [event: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_out_write: {
+         parameters: [str: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_err_write: {
+         parameters: [str: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_report_error: {
+         parameters: [str: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      tabpage_get_windows: {
+         parameters: [tabpage: number];
+         return_type: number[];
+      };
+      /** @deprecated since api level 1 */
+      tabpage_get_var: {
+         parameters: [tabpage: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      tabpage_get_window: {
+         parameters: [tabpage: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      tabpage_is_valid: {
+         parameters: [tabpage: number];
+         return_type: boolean;
+      };
+      /** @deprecated since api level 1 */
+      ui_detach: {
+         parameters: [];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      ui_try_resize: {
+         parameters: [width: number, height: number];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      vim_feedkeys: {
+         parameters: [keys: string, mode: string, escape_ks: boolean];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_input: {
+         parameters: [keys: string];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_replace_termcodes: {
+         parameters: [str: string, from_part: boolean, do_lt: boolean, special: boolean];
+         return_type: string;
+      };
+      /** @deprecated since api level 1 */
+      vim_strwidth: {
+         parameters: [text: string];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_list_runtime_paths: {
+         parameters: [];
+         return_type: string[];
+      };
+      /** @deprecated since api level 1 */
+      vim_change_directory: {
+         parameters: [dir: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_current_line: {
+         parameters: [];
+         return_type: string;
+      };
+      /** @deprecated since api level 1 */
+      vim_set_current_line: {
+         parameters: [line: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_del_current_line: {
+         parameters: [];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_var: {
+         parameters: [name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_vvar: {
+         parameters: [name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_buffers: {
+         parameters: [];
+         return_type: number[];
+      };
+      /** @deprecated since api level 1 */
+      vim_get_current_buffer: {
+         parameters: [];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_set_current_buffer: {
+         parameters: [buf: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_windows: {
+         parameters: [];
+         return_type: number[];
+      };
+      /** @deprecated since api level 1 */
+      vim_get_current_window: {
+         parameters: [];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_set_current_window: {
+         parameters: [win: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_tabpages: {
+         parameters: [];
+         return_type: number[];
+      };
+      /** @deprecated since api level 1 */
+      vim_get_current_tabpage: {
+         parameters: [];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_set_current_tabpage: {
+         parameters: [tabpage: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_name_to_color: {
+         parameters: [name: string];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_color_map: {
+         parameters: [];
+         return_type: Record<string, unknown>;
+      };
+      /** @deprecated since api level 1 */
+      vim_get_api_info: {
+         parameters: [];
+         return_type: [unknown, unknown];
+      };
+      /** @deprecated since api level 1 */
+      vim_command: {
+         parameters: [cmd: string];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      vim_eval: {
+         parameters: [expr: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      vim_call_function: {
+         parameters: [fn: string, args: unknown[]];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      window_get_buffer: {
+         parameters: [win: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      window_get_cursor: {
+         parameters: [win: number];
+         return_type: [number, number];
+      };
+      /** @deprecated since api level 1 */
+      window_set_cursor: {
+         parameters: [win: number, pos: [number, number]];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      window_get_height: {
+         parameters: [win: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      window_set_height: {
+         parameters: [win: number, height: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      window_get_width: {
+         parameters: [win: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      window_set_width: {
+         parameters: [win: number, width: number];
+         return_type: void;
+      };
+      /** @deprecated since api level 1 */
+      window_get_var: {
+         parameters: [win: number, name: string];
+         return_type: unknown;
+      };
+      /** @deprecated since api level 1 */
+      window_get_position: {
+         parameters: [win: number];
+         return_type: [number, number];
+      };
+      /** @deprecated since api level 1 */
+      window_get_tabpage: {
+         parameters: [win: number];
+         return_type: number;
+      };
+      /** @deprecated since api level 1 */
+      window_is_valid: {
+         parameters: [win: number];
+         return_type: boolean;
       };
    };
 

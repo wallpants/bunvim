@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { inspect } from "node:util";
 import winston from "winston";
 import { MessageType, type Client, type LogLevel, type RPCMessage } from "./types.ts";
 
@@ -18,19 +19,14 @@ export function createLogger(
             format: winston.format.combine(
                winston.format.colorize(),
                winston.format.timestamp({ format: "HH:mm:ss.SSS" }),
-               winston.format.printf((info) => `\n${info.level} ${info["timestamp"]}`),
-            ),
-         }),
-         new winston.transports.File({
-            filename: defaultFilePath,
-            format: winston.format.combine(
-               winston.format((info) => {
-                  // @ts-expect-error ts mad we delete non-optional prop `level`
-                  delete info.level;
-                  return info;
-               })(),
-               winston.format.prettyPrint({
-                  colorize: true,
+               winston.format.printf((info) => {
+                  // Object.entries drops winston's internal Symbol props
+                  const body = Object.fromEntries(
+                     Object.entries(info).filter(([key]) => key !== "level" && key !== "timestamp"),
+                  );
+                  const level = info.level;
+                  const timestamp = String(info["timestamp"]);
+                  return `\n${level} ${timestamp}\n${inspect(body, { colors: true, depth: null })}`;
                }),
             ),
          }),

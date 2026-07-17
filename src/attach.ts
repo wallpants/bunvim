@@ -1,11 +1,10 @@
-import { EventEmitter } from "node:events";
 import { Packr, UnpackrStream, addExtension, unpack } from "msgpackr";
 import { createLogger, prettyRPCMessage } from "./logger.ts";
 import {
    MessageType,
    type AttachParams,
+   type Awaitable,
    type BaseEvents,
-   type EventHandler,
    type Nvim,
    type RPCMessage,
    type RPCNotification,
@@ -14,7 +13,6 @@ import {
 } from "./types.ts";
 
 const packr = new Packr({ useRecords: false });
-const unpackrStream = new UnpackrStream({ useRecords: false });
 
 [0, 1, 2].forEach((type) => {
    // https://neovim.io/doc/user/api.html#api-definitions
@@ -25,6 +23,18 @@ const unpackrStream = new UnpackrStream({ useRecords: false });
    addExtension({ type, unpack: (buffer) => unpack(buffer) as number });
 });
 
+function toError(error: unknown): Error {
+   // neovim errors are usually [code, message] tuples
+   if (Array.isArray(error) && typeof error[1] === "string") {
+      return new Error(error[1]);
+   }
+   if (error instanceof Error) return error;
+   if (typeof error === "string") return new Error(error);
+   return new Error(JSON.stringify(error));
+}
+
+type UntypedHandler = (args: unknown[]) => Awaitable<unknown>;
+
 export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
    socket,
    client,
@@ -32,33 +42,50 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 }: AttachParams): Promise<Nvim<ApiInfo>> {
    const logger = createLogger(client, logging);
    const messageOutQueue: RPCMessage[] = [];
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   const notificationHandlers = new Map<string, Record<string, EventHandler<any, unknown>>>();
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   const requestHandlers = new Map<string, EventHandler<any, unknown>>();
-   const emitter = new EventEmitter({ captureRejections: true });
+   const notificationHandlers = new Map<string, Map<number, UntypedHandler>>();
+   const requestHandlers = new Map<string, UntypedHandler>();
+   const pendingRequests = new Map<
+      number,
+      { resolve: (result: unknown) => void; reject: (error: Error) => void }
+   >();
+   // Sometimes RPC messages are split into multiple socket messages.
+   // `unpackrStream` handles collecting all socket messages if the RPC message
+   // is split and decoding it.
+   const unpackrStream = new UnpackrStream({ useRecords: false });
 
    let lastReqId = 0;
    let handlerId = 0;
+   let closed = false;
+
+   function fail(error: Error) {
+      if (closed) return;
+      closed = true;
+      messageOutQueue.length = 0;
+      unpackrStream.removeAllListeners();
+      for (const { reject } of pendingRequests.values()) {
+         reject(error);
+      }
+      pendingRequests.clear();
+   }
 
    const nvimSocket = await Bun.connect({
       unix: socket,
       socket: {
          binaryType: "uint8array",
          data(_, data) {
-            // Sometimes RPC messages are split into multiple socket messages.
-            // `unpackrStream` handles collecting all socket messages if the RPC message
-            // is split and decoding it.
             unpackrStream.write(data);
          },
          error(_, error) {
             logger?.error("socket error", error);
+            fail(error);
          },
          end() {
             logger?.debug("connection closed by neovim");
+            fail(new Error("connection closed by neovim"));
          },
          close() {
             logger?.debug("connection closed by bunvim");
+            fail(new Error("connection closed by bunvim"));
          },
       },
    });
@@ -66,48 +93,52 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
    function processMessageOutQueue() {
       // All writing to neovim happens through this function.
       // Outgoing RPC messages are added to the `messageOutQueue` and sent ASAP
-      if (!messageOutQueue.length) return;
-
-      const message = messageOutQueue.shift();
-      if (!message) {
-         logger?.error("Cannot process undefined message");
-         return;
+      let message: RPCMessage | undefined;
+      while ((message = messageOutQueue.shift()) !== undefined) {
+         logger?.debug(prettyRPCMessage(message, "out"));
+         nvimSocket.write(packr.pack(message));
       }
-
-      logger?.debug(prettyRPCMessage(message, "out"));
-      nvimSocket.write(packr.pack(message));
-      processMessageOutQueue();
    }
 
-   function runNotificationHandlers(message: RPCNotification) {
+   async function runNotificationHandlers(message: RPCNotification) {
       // message[1] notification name
       // message[2] args
       const handlers = notificationHandlers.get(message[1]);
       if (!handlers) return;
 
-      Object.entries(handlers).forEach(async ([id, handler]) => {
-         const result = await handler(message[2]);
-         // remove notification handler if it returns specifically `true`
-         // other truthy values won't trigger the removal
-         // eslint-disable-next-line
-         if (result === true) delete handlers[id];
-      });
+      for (const [id, handler] of handlers) {
+         try {
+            const result = await handler(message[2]);
+            // remove notification handler if it returns specifically `true`
+            // other truthy values won't trigger the removal
+            if (result === true) handlers.delete(id);
+         } catch (error) {
+            logger?.error(`notification handler error: ${message[1]}`, error);
+         }
+      }
    }
 
    unpackrStream.on("data", (message: RPCMessage) => {
       (async () => {
          logger?.debug(prettyRPCMessage(message, "in"));
          if (message[0] === MessageType.NOTIFY) {
-            // asynchronously run notification handlers.
             // RPCNotifications don't need a response
-            runNotificationHandlers(message);
+            await runNotificationHandlers(message);
          }
 
          if (message[0] === MessageType.RESPONSE) {
             // message[1] reqId
             // message[2] error
             // message[3] result
-            emitter.emit(`response-${message[1]}`, message[2], message[3]);
+            const request = pendingRequests.get(message[1]);
+            if (request) {
+               pendingRequests.delete(message[1]);
+               if (message[2] !== null) {
+                  request.reject(toError(message[2]));
+               } else {
+                  request.resolve(message[3]);
+               }
+            }
          }
 
          if (message[0] === MessageType.REQUEST) {
@@ -131,11 +162,11 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
                   const result = await handler(message[3]);
                   const response: RPCResponse = [MessageType.RESPONSE, message[1], null, result];
                   messageOutQueue.unshift(response);
-               } catch (err) {
+               } catch (error) {
                   const response: RPCResponse = [
                      MessageType.RESPONSE,
                      message[1],
-                     String(err),
+                     toError(error).message,
                      null,
                   ];
                   messageOutQueue.unshift(response);
@@ -145,23 +176,22 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
          // Continue processing queue
          processMessageOutQueue();
-      })().catch((err: unknown) => logger?.error("unpackrStream error", err));
+      })().catch((error: unknown) => logger?.error("unpackrStream error", error));
    });
 
    const call: Nvim["call"] = (func, args) => {
+      if (closed) {
+         return Promise.reject(new Error("connection closed"));
+      }
+
       const reqId = ++lastReqId;
       const request: RPCRequest = [MessageType.REQUEST, reqId, func, args];
 
       return new Promise((resolve, reject) => {
-         // Register response listener before adding request to queue to avoid
-         // response coming in before listener was set up.
-         emitter.once(`response-${reqId}`, (error, result) => {
-            if (error) reject(error as Error);
-            resolve(result as unknown);
-         });
-
+         // Register before adding request to queue to avoid
+         // response coming in before we're ready to handle it.
+         pendingRequests.set(reqId, { resolve, reject });
          messageOutQueue.push(request);
-         // Start processing queue if we're not already
          processMessageOutQueue();
       });
    };
@@ -181,14 +211,16 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
       channelId,
       logger: logger,
       onNotification(notification, callback) {
-         const handlers = notificationHandlers.get(notification as string) ?? {};
-         handlers[++handlerId] = callback;
-         notificationHandlers.set(notification as string, handlers);
+         const name = notification as string;
+         const handlers = notificationHandlers.get(name) ?? new Map<number, UntypedHandler>();
+         handlers.set(++handlerId, callback as UntypedHandler);
+         notificationHandlers.set(name, handlers);
       },
       onRequest(method, callback) {
-         requestHandlers.set(method as string, callback);
+         requestHandlers.set(method as string, callback as UntypedHandler);
       },
       detach() {
+         fail(new Error("connection closed by bunvim"));
          nvimSocket.end();
       },
    };

@@ -24,7 +24,8 @@ export type FakeNvim = {
    close(): void;
 };
 
-export function startFakeNvim(): FakeNvim {
+export function startFakeNvim(options?: { handshake?: boolean }): FakeNvim {
+   const handshake = options?.handshake ?? true;
    const socketPath = join(tmpdir(), `bunvim-test-${crypto.randomUUID()}.sock`);
    const received: RPCMessage[] = [];
    const unpackrStream = new UnpackrStream({ useRecords: false });
@@ -41,13 +42,13 @@ export function startFakeNvim(): FakeNvim {
       received.push(message);
       if (message[0] !== MessageType.REQUEST) return;
 
-      // auto-answer the attach handshake
+      // auto-answer the attach handshake (unless disabled via options)
       if (message[2] === "nvim_set_client_info") {
-         send([MessageType.RESPONSE, message[1], null, null]);
+         if (handshake) send([MessageType.RESPONSE, message[1], null, null]);
          return;
       }
       if (message[2] === "nvim_get_api_info") {
-         send([MessageType.RESPONSE, message[1], null, [FAKE_CHANNEL_ID, {}]]);
+         if (handshake) send([MessageType.RESPONSE, message[1], null, [FAKE_CHANNEL_ID, {}]]);
          return;
       }
 

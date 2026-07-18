@@ -229,6 +229,92 @@ test("pending calls reject when the connection closes", async () => {
    await expectReject(nvim.call("nvim_get_current_line", []), "connection closed");
 });
 
+test("large messages survive socket backpressure", async () => {
+   const fake = startFake();
+   const nvim = await connect(fake);
+
+   fake.onRequest((request) => [
+      MessageType.RESPONSE,
+      request[1],
+      null,
+      ((request[3] as string[])[0] ?? "").length,
+   ]);
+
+   // far larger than the kernel socket buffer, forcing partial writes
+   const big = "x".repeat(8 * 1024 * 1024);
+   const result = await nvim.call("nvim_exec_lua", [big, []]);
+   expect(result).toBe(big.length);
+
+   // stream must still be intact afterwards
+   fake.onRequest((request) => [MessageType.RESPONSE, request[1], null, "ok"]);
+   expect(await nvim.call("nvim_get_current_line", [])).toBe("ok");
+});
+
+test("call rejects after the configured timeout", async () => {
+   const fake = startFake();
+   const nvim = await connect(fake);
+
+   fake.onRequest(() => undefined);
+   await expectReject(
+      nvim.call("nvim_get_current_line", [], { timeout: 50 }),
+      "timed out after 50ms",
+   );
+
+   // a late response for the timed-out request must not break the connection
+   const timedOut = fake.received.find(
+      (message) => message[0] === MessageType.REQUEST && message[2] === "nvim_get_current_line",
+   ) as RPCRequest | undefined;
+   if (!timedOut) throw new Error("unreachable");
+   fake.send([MessageType.RESPONSE, timedOut[1], null, "too late"]);
+   await Bun.sleep(10);
+
+   fake.onRequest((request) => [MessageType.RESPONSE, request[1], null, "still works"]);
+   expect(await nvim.call("nvim_get_current_line", [])).toBe("still works");
+});
+
+test("attach rejects when the handshake is not answered", async () => {
+   const fake = startFakeNvim({ handshake: false });
+   fakes.push(fake);
+
+   await expectReject(
+      attach({
+         socket: fake.socketPath,
+         client: { name: "bunvim-test" },
+         timeouts: { attach: 50 },
+      }),
+      "timed out after 50ms",
+   );
+});
+
+test("onDisconnect fires when neovim closes the connection", async () => {
+   const fake = startFake();
+   const nvim = await connect(fake);
+
+   const errors: Error[] = [];
+   nvim.onDisconnect((error) => errors.push(error));
+
+   fake.close();
+
+   await waitFor(() => (errors.length === 1 ? true : undefined));
+   expect(errors[0]?.message).toContain("connection closed");
+});
+
+test("onDisconnect fires on detach and immediately when already closed", async () => {
+   const fake = startFake();
+   const nvim = await connect(fake);
+
+   const calls: string[] = [];
+   nvim.onDisconnect(() => calls.push("before"));
+
+   nvim.detach();
+   expect(calls).toEqual(["before"]);
+
+   // registering after close still notifies (asynchronously)
+   nvim.onDisconnect(() => calls.push("after"));
+   await Bun.sleep(1);
+   expect(calls).toEqual(["before", "after"]);
+});
+
 test("detach rejects pending calls and is idempotent", async () => {
    const fake = startFake();
    const nvim = await connect(fake);

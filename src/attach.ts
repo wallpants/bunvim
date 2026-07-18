@@ -39,9 +39,13 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
    socket,
    client,
    logging,
+   timeouts,
 }: AttachParams): Promise<Nvim<ApiInfo>> {
    const logger = createLogger(client, logging);
+   const attachTimeout = timeouts?.attach ?? 10_000;
+   const requestTimeout = timeouts?.request;
    const messageOutQueue: RPCMessage[] = [];
+   const disconnectHandlers = new Set<(error: Error) => void>();
    const notificationHandlers = new Map<string, Map<number, UntypedHandler>>();
    const requestHandlers = new Map<string, UntypedHandler>();
    const pendingRequests = new Map<
@@ -56,16 +60,29 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
    let lastReqId = 0;
    let handlerId = 0;
    let closed = false;
+   let closedError: Error | undefined;
+   // remainder of a partially written message, pending socket "drain"
+   let writeBuffer: Uint8Array | undefined;
 
    function fail(error: Error) {
       if (closed) return;
       closed = true;
+      closedError = error;
       messageOutQueue.length = 0;
+      writeBuffer = undefined;
       unpackrStream.removeAllListeners();
       for (const { reject } of pendingRequests.values()) {
          reject(error);
       }
       pendingRequests.clear();
+      for (const callback of disconnectHandlers) {
+         try {
+            callback(error);
+         } catch (callbackError) {
+            logger?.error("onDisconnect handler error", callbackError);
+         }
+      }
+      disconnectHandlers.clear();
    }
 
    const nvimSocket = await Bun.connect({
@@ -74,6 +91,10 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
          binaryType: "uint8array",
          data(_, data) {
             unpackrStream.write(data);
+         },
+         drain() {
+            // kernel buffer has space again, resume writing
+            processMessageOutQueue();
          },
          error(_, error) {
             logger?.error("socket error", error);
@@ -92,11 +113,25 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
 
    function processMessageOutQueue() {
       // All writing to neovim happens through this function.
-      // Outgoing RPC messages are added to the `messageOutQueue` and sent ASAP
-      let message: RPCMessage | undefined;
-      while ((message = messageOutQueue.shift()) !== undefined) {
-         logger?.debug(prettyRPCMessage(message, "out"));
-         nvimSocket.write(packr.pack(message));
+      // Outgoing RPC messages are added to the `messageOutQueue` and sent ASAP.
+      // `socket.write` may write fewer bytes than provided when the kernel
+      // buffer is full; the remainder is kept in `writeBuffer` and flushed
+      // by the socket's "drain" callback.
+      if (closed) return;
+      for (;;) {
+         if (!writeBuffer) {
+            const message = messageOutQueue.shift();
+            if (message === undefined) return;
+            logger?.debug(prettyRPCMessage(message, "out"));
+            writeBuffer = packr.pack(message);
+         }
+         const written = nvimSocket.write(writeBuffer);
+         if (written < writeBuffer.byteLength) {
+            // kernel buffer is full, resume writing on "drain"
+            if (written > 0) writeBuffer = writeBuffer.subarray(written);
+            return;
+         }
+         writeBuffer = undefined;
       }
    }
 
@@ -179,32 +214,62 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
       })().catch((error: unknown) => logger?.error("unpackrStream error", error));
    });
 
-   const call: Nvim["call"] = (func, args) => {
+   const call: Nvim["call"] = (func, args, opts) => {
       if (closed) {
          return Promise.reject(new Error("connection closed"));
       }
 
       const reqId = ++lastReqId;
       const request: RPCRequest = [MessageType.REQUEST, reqId, func, args];
+      const timeout = opts?.timeout ?? requestTimeout;
 
       return new Promise((resolve, reject) => {
+         let timer: ReturnType<typeof setTimeout> | undefined;
+         if (timeout) {
+            timer = setTimeout(() => {
+               pendingRequests.delete(reqId);
+               reject(new Error(`request "${func}" timed out after ${timeout}ms`));
+            }, timeout);
+         }
          // Register before adding request to queue to avoid
          // response coming in before we're ready to handle it.
-         pendingRequests.set(reqId, { resolve, reject });
+         pendingRequests.set(reqId, {
+            resolve: (result) => {
+               clearTimeout(timer);
+               resolve(result);
+            },
+            reject: (error) => {
+               clearTimeout(timer);
+               reject(error);
+            },
+         });
          messageOutQueue.push(request);
          processMessageOutQueue();
       });
    };
 
-   await call("nvim_set_client_info", [
-      client.name,
-      client.version ?? {},
-      client.type ?? "msgpack-rpc",
-      client.methods ?? {},
-      client.attributes ?? {},
-   ]);
+   let channelId: number;
+   try {
+      await call(
+         "nvim_set_client_info",
+         [
+            client.name,
+            client.version ?? {},
+            client.type ?? "msgpack-rpc",
+            client.methods ?? {},
+            client.attributes ?? {},
+         ],
+         { timeout: attachTimeout },
+      );
 
-   const channelId = (await call("nvim_get_api_info", []))[0] as number;
+      channelId = (await call("nvim_get_api_info", [], { timeout: attachTimeout }))[0] as number;
+   } catch (error) {
+      // if the handshake fails or times out, don't leave a dangling socket
+      const failure = toError(error);
+      fail(failure);
+      nvimSocket.end();
+      throw failure;
+   }
 
    return {
       call,
@@ -218,6 +283,17 @@ export async function attach<ApiInfo extends BaseEvents = BaseEvents>({
       },
       onRequest(method, callback) {
          requestHandlers.set(method as string, callback as UntypedHandler);
+      },
+      onDisconnect(callback) {
+         if (closed) {
+            // already disconnected, still notify, but asynchronously
+            const error = closedError ?? new Error("connection closed");
+            queueMicrotask(() => {
+               callback(error);
+            });
+            return;
+         }
+         disconnectHandlers.add(callback);
       },
       detach() {
          fail(new Error("connection closed by bunvim"));

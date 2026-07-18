@@ -109,6 +109,29 @@ export type AttachParams = {
    /**
     * If left undefined, logging will be disabled.
     */
+   /**
+    * Timeouts in milliseconds.
+    */
+   timeouts?: {
+      /**
+       * Max time to wait for the initial handshake with neovim
+       * (`nvim_set_client_info` + `nvim_get_api_info`) before `attach`
+       * rejects and closes the socket. Set to `0` to disable.
+       *
+       * @default 10_000
+       */
+      attach?: number;
+      /**
+       * Default max time to wait for a response to any `call()` before
+       * rejecting. Disabled by default: neovim may legitimately take
+       * arbitrarily long to respond (e.g. blocked on user input).
+       * Can be overridden per call.
+       *
+       * @default undefined (no timeout)
+       */
+      request?: number;
+   };
+
    logging?: {
       /**
        * @remarks
@@ -155,6 +178,14 @@ export type RPCResponse = [
 ];
 export type RPCMessage = RPCRequest | RPCNotification | RPCResponse;
 
+export type CallOptions = {
+   /**
+    * Reject the request if no response is received within `timeout` ms.
+    * Overrides `AttachParams.timeouts.request`.
+    */
+   timeout?: number;
+};
+
 export type EventHandler<Args, Returns> = (args: Args) => Awaitable<Returns>;
 export type NotificationHandler = EventHandler<unknown[], void>;
 export type RequestHandler = EventHandler<unknown[], unknown>;
@@ -176,10 +207,12 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
     *
     * @param func - function name
     * @param args - function arguments, provide empty array `[]` if no args
+    * @param opts - per-call options (timeout)
     */
    call<M extends keyof NeovimApi["functions"]>(
       func: M,
       args: NeovimApi["functions"][M]["parameters"],
+      opts?: CallOptions,
    ): Promise<NeovimApi["functions"][M]["return_type"]>;
    /**
     *
@@ -242,6 +275,23 @@ export type Nvim<ApiInfo extends BaseEvents = BaseEvents> = {
       method: M,
       callback: EventHandler<ApiInfo["requests"][M], unknown>,
    ): void;
+   /**
+    *
+    * Register a handler to be called once when the connection to neovim
+    * closes for any reason (neovim exited, socket error, or `detach()`).
+    *
+    * If the connection is already closed when this is called,
+    * the handler is invoked asynchronously right away.
+    *
+    * @example
+    * ```typescript
+    * nvim.onDisconnect(() => {
+    *   // stop servers, exit the process, etc.
+    *   process.exit(0);
+    * });
+    * ```
+    */
+   onDisconnect(callback: (error: Error) => void): void;
    /**
     *
     * Close socket connection to neovim.

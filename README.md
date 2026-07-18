@@ -8,8 +8,9 @@ using TypeScript and JavaScript. If you're familiar with Neovim's Lua API, you'l
 
 This client includes [TypeScript definitions](https://github.com/wallpants/bunvim/blob/main/src/neovim-api.types.ts),
 generated from [Neovim's api-metadata](https://neovim.io/doc/user/api.html#api-metadata), describing API function signatures,
-including function parameters and return values. The definitions can be regenerated against your local Neovim
-with the command `bunx bunvim types`.
+including function parameters and return values. The Neovim version the bundled definitions were generated against
+is recorded in the file's header comment. If you're running a different Neovim version, you can regenerate them
+against your local Neovim with the command `bunx bunvim types`.
 
 All functionality is implemented in [one file](https://github.com/wallpants/bunvim/blob/main/src/attach.ts).
 If you're looking for higher levels of abstraction, take a look at [neovim/node-client](https://github.com/neovim/node-client)

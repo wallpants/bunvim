@@ -76,6 +76,7 @@ test("generateTypescriptContent renders all sections", () => {
    const output = generateTypescriptContent(api);
 
    expect(output).toContain("/* oxlint-disable typescript/no-invalid-void-type */");
+   expect(output).toContain("generated against Neovim v0.11.0 (api level 13)");
    expect(output).toContain("nvim_test: {");
    expect(output).toContain("parameters: [str: string, pos: [number, number]];");
    expect(output).toContain("return_type: number;");

@@ -1,4 +1,0 @@
-docs
-bun.lockb
-src/**/*.test.ts
-src/test-utils

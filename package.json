@@ -11,6 +11,12 @@
   "bin": {
     "bunvim": "src/cli/index.ts"
   },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/test-utils",
+    "!src/tests.ts"
+  ],
   "type": "module",
   "exports": {
     "types": "./src/index.ts",

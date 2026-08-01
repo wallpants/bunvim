@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "commander": "^15.0.0",
-    "msgpackr": "^2.0.4",
+    "msgpackr": "^2.0.5",
     "winston": "^3.19.0"
   },
   "devDependencies": {
